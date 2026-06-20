@@ -1,11 +1,10 @@
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_timer.h>
-#include <SDL3/SDL_video.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#include "clay_renderer_SDL3.c"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <SDL3/SDL_main.h>
-#include <SDL3/SDL.h>
+
 
 #define SDL_FLAGS SDL_INIT_VIDEO
 #define WINDOW_TITLE "Zahrawi"
@@ -36,8 +35,25 @@ bool init_sdl(Game *g) {
         return false;
     }
 
+    SDL_SetRenderVSync(g->renderer, 1);
+
     g->running = true;
     return true;
+}
+
+void loop(Game *g){
+    while (g->running) {
+        SDL_Event e;
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_EVENT_QUIT) {
+                g->running = false;
+            }
+        }
+
+        SDL_SetRenderDrawColor(g->renderer, 30, 30, 30, 255);
+        SDL_RenderClear(g->renderer);
+        SDL_RenderPresent(g->renderer);
+    }
 }
 
 void free_sdl(Game *g) {
@@ -52,7 +68,7 @@ void free_sdl(Game *g) {
     SDL_Quit();
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     Game game = {0};
 
     if (!init_sdl(&game)) {
@@ -60,20 +76,7 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // Main event loop
-    while (game.running) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_EVENT_QUIT) {
-                game.running = false;
-            }
-        }
-
-        SDL_SetRenderDrawColor(game.renderer, 30, 30, 30, 255);
-        SDL_RenderClear(game.renderer);
-        SDL_RenderPresent(game.renderer);
-    }
-
+    loop(&game);
     free_sdl(&game);
     return EXIT_SUCCESS;
 }
