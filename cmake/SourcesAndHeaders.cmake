@@ -11,6 +11,9 @@ file(GLOB_RECURSE all_sources
     CONFIGURE_DEPENDS
     "${SRC_DIR}/*.c"
 )
+# Exclude files that are #include'd by main.c (not compiled separately)
+list(FILTER all_sources EXCLUDE REGEX ".*/clay_renderer_SDL3\\.c$")
+list(FILTER all_sources EXCLUDE REGEX ".*/clay-video-demo\\.c$")
 
 # exe_sources = everything (for the executable)
 set(exe_sources ${all_sources})
@@ -22,7 +25,7 @@ list(FILTER sources EXCLUDE REGEX ".*/main\\.c$")
 # ---- Headers ----
 file(GLOB_RECURSE headers
     CONFIGURE_DEPENDS
-    "${INCLUDE_DIR}/*.h"
+    "${INCLUDE_DIR}/*.(h|c)"
 )
 
 # ---- Test directories ----

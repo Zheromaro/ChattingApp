@@ -28,7 +28,7 @@ else ifeq ($(COMPILER),gcc)
 else
   $(error Unsupported COMPILER="$(COMPILER)". Use "gcc" or "clang")
 endif
-export CFLAGS ?= -Wno-error=override-init -Wno-error=deprecated-declarations
+export CFLAGS := -Wno-error=discarded-qualifiers -Wno-error=override-init -Wno-error=deprecated-declarations
 
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
@@ -83,6 +83,8 @@ build: ## Build the project in DEBUG mode (no tests, no optimizations)
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=OFF \
 	      -DCMAKE_BUILD_TYPE=Debug
 	cmake --build build --config Debug
+	@mkdir -p .zed
+	@cp -f build/compile_commands.json .zed/compile_commands.json
 
 rebuild: ## Clean and rebuild the project in DEBUG mode
 	$(MAKE) clean
@@ -137,6 +139,8 @@ lib_header_only: ## Build as a HEADER-ONLY library
 # ==========================================================
 test_ctest: ## Configure, rebuild, and run CTest
 	cmake -B build \
+	      -DCMAKE_C_COMPILER=$(CC) \
+	      -DCMAKE_CXX_COMPILER=$(CXX) \
 	      -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=ON
 	cmake --build build --config Release
@@ -144,6 +148,8 @@ test_ctest: ## Configure, rebuild, and run CTest
 
 test_gtest: ## Configure, rebuild, and run all GTest executables directly
 	cmake -B build \
+	      -DCMAKE_C_COMPILER=$(CC) \
+	      -DCMAKE_CXX_COMPILER=$(CXX) \
 	      -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=ON
 	cmake --build build --config Release

@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.15)
 # ==========================================================
 # 📦 Package Managers (Vcpkg) must be included before project definition
 # ==========================================================
-
 include(cmake/Vcpkg.cmake)
 
 # ==========================================================
@@ -51,7 +50,7 @@ endif()
 
 
 # ==========================================================
-# 📁 Source & Header Files
+# 📁 Source & Header Files + Assets
 # ==========================================================
 include(cmake/SourcesAndHeaders.cmake)
 message(STATUS "📂 Found project sources and headers")
@@ -110,6 +109,15 @@ if(${PROJECT_NAME}_VERBOSE_OUTPUT)
 endif()
 
 # ==========================================================
+# 🎨 get Assets
+# ==========================================================
+
+include(cmake/Assets.cmake)
+if(EXISTS "${ASSETS_SOURCE_DIR}")
+  message(STATUS "📂 Found project sources and headers")
+endif()
+
+# ==========================================================
 # 🧾 Output directories
 # ==========================================================
 set_target_properties(
@@ -120,7 +128,7 @@ set_target_properties(
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}"
 )
 
-if(${PROJECT_NAME}_BUILD_EXECUTABLE AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
+if(${PROJECT_NAME}_BUILD_TYPE STREQUAL "executable" AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
   set_target_properties(
     ${PROJECT_NAME}_LIB
     PROPERTIES
@@ -142,18 +150,18 @@ find_package(SDL3_image CONFIG REQUIRED)
 # Non-vcpkg external libraries
 include(cmake/ExternalLib.cmake)
 
-if(NOT ${PROJECT_NAME}_BUILD_HEADERS_ONLY)
+if(NOT ${PROJECT_NAME}_BUILD_TYPE STREQUAL "header-only")
   set(LINK_LIBS
     ${EXTERNAL_LIBS}
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
-    $<IF:$<TARGET_EXISTS:SDL3_image::SDL3_image-shared>,SDL3_image::SDL3_image-shared,SDL3_image::SDL3_image-static>
-  )
+    SDL3_image::SDL3_image
+)
 
   target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBS})
   target_include_directories(${PROJECT_NAME} PUBLIC ${EXTERNAL_LIBS_INCLUDE})
 
-  if(${PROJECT_NAME}_BUILD_EXECUTABLE AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
+  if(${PROJECT_NAME}_BUILD_TYPE STREQUAL "executable" AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
     target_link_libraries(${PROJECT_NAME}_LIB PRIVATE ${LINK_LIBS})
     target_include_directories(${PROJECT_NAME}_LIB PUBLIC ${EXTERNAL_LIBS_INCLUDE})
   endif()
@@ -162,7 +170,7 @@ endif()
 # ==========================================================
 # 📚 Include Directories
 # ==========================================================
-if(${PROJECT_NAME}_BUILD_HEADERS_ONLY)
+if(${PROJECT_NAME}_BUILD_TYPE STREQUAL "header-only")
   target_include_directories(
     ${PROJECT_NAME}
     INTERFACE
@@ -179,7 +187,7 @@ else()
       ${CMAKE_CURRENT_SOURCE_DIR}/src
   )
 
-  if(${PROJECT_NAME}_BUILD_EXECUTABLE AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
+  if(${PROJECT_NAME}_BUILD_TYPE STREQUAL "executable" AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
     target_include_directories(
       ${PROJECT_NAME}_LIB
       PUBLIC
@@ -228,9 +236,7 @@ message(STATUS "")
 message(STATUS "====== ${PROJECT_NAME} Configuration Summary ======")
 message(STATUS "🔧 C Compiler:            ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})")
 message(STATUS "🔧 Build type:            ${CMAKE_BUILD_TYPE}")
-message(STATUS "⚙️ Executable:            ${${PROJECT_NAME}_BUILD_EXECUTABLE}")
-message(STATUS "📜 Headers-only:          ${${PROJECT_NAME}_BUILD_HEADERS_ONLY}")
-message(STATUS "📦 Shared library:        ${${PROJECT_NAME}_BUILD_SHARED}")
+message(STATUS "⚙️  Project type:          ${${PROJECT_NAME}_BUILD_TYPE}")
 message(STATUS "📦 Install prefix:        ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "🧪 Unit testing enabled:  ${${PROJECT_NAME}_ENABLE_UNIT_TESTING}")
 message(STATUS "=====================================================")
