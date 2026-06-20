@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 # ==========================================================
 # 📦 Package Managers (Vcpkg) must be included before project definition
 # ==========================================================
-include(cmake/Vcpkg.cmake)
+include(cmake/Vcpkg/Vcpkg.cmake)
 
 # ==========================================================
 # 🧩 Project details
@@ -25,7 +25,7 @@ if(NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   message(WARNING "⚠️ Unsupported compiler ID: ${CMAKE_C_COMPILER_ID}. This project is tested with GCC and Clang only.")
 endif()
 
-# so Zed Editor can see all includes
+# so the Code Editor can see all includes
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ==========================================================

@@ -36,7 +36,7 @@ if(ENABLE_VCPKG AND (NOT DEFINED CMAKE_TOOLCHAIN_FILE OR NOT EXISTS "${CMAKE_TOO
   else()
     message(FATAL_ERROR "❌ Vcpkg toolchain file missing: ${VCPKG_TOOLCHAIN_FILE}")
   endif()
-  # Explicitly set manifest dir to ensure vcpkg.json is found
-  set(VCPKG_MANIFEST_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH "" FORCE)
+  # Manifest dir now points to the vcpkg config folder
+  set(VCPKG_MANIFEST_DIR "${CMAKE_SOURCE_DIR}/cmake/Vcpkg" CACHE PATH "" FORCE)
 
 endif()

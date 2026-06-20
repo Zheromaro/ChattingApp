@@ -28,7 +28,20 @@ else ifeq ($(COMPILER),gcc)
 else
   $(error Unsupported COMPILER="$(COMPILER)". Use "gcc" or "clang")
 endif
-export CFLAGS := -Wno-error=discarded-qualifiers -Wno-error=override-init -Wno-error=deprecated-declarations
+CFLAGS := -Wno-error=discarded-qualifiers -Wno-error=override-init -Wno-error=deprecated-declarations
+
+# 🔧 Helpers:
+# Sync compile_commands.json to .zed/ for clangd
+# Usage: $(call SYNC_COMPILE_COMMANDS)
+define SYNC_COMPILE_COMMANDS
+	@mkdir -p .zed
+	@if [ -f build/compile_commands.json ]; then \
+		cp -f build/compile_commands.json .zed/compile_commands.json; \
+		printf "$(COLOR_GREEN)✓ Synced compile_commands.json → .zed/$(COLOR_RESET)\n"; \
+	else \
+		printf "$(COLOR_YELLOW)⚠ build/compile_commands.json not found yet$(COLOR_RESET)\n"; \
+	fi
+endef
 
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
@@ -69,7 +82,7 @@ clean: ## Clean build artifacts but preserve vcpkg toolchain
 	fi
 
 clean_all: ## Clean the entire build directory (including vcpkg)
-	rm -rf build/
+	rm -rf build/ .zed/
 
 # ==========================================================
 # 🏗️ Build Modes
@@ -82,9 +95,8 @@ build: ## Build the project in DEBUG mode (no tests, no optimizations)
 	      -D$(CMAKE_OPT_PREFIX)_BUILD_TYPE="executable" \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=OFF \
 	      -DCMAKE_BUILD_TYPE=Debug
+	$(call SYNC_COMPILE_COMMANDS)
 	cmake --build build --config Debug
-	@mkdir -p .zed
-	@cp -f build/compile_commands.json .zed/compile_commands.json
 
 rebuild: ## Clean and rebuild the project in DEBUG mode
 	$(MAKE) clean
@@ -98,6 +110,7 @@ release: clean_all ## Clean and rebuild for release in RELEASE mode
 	      -D$(CMAKE_OPT_PREFIX)_BUILD_TYPE="executable" \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=OFF \
 	      -DCMAKE_BUILD_TYPE=Release
+	$(call SYNC_COMPILE_COMMANDS)
 	cmake --build build --config Release
 
 # ==========================================================
@@ -112,6 +125,7 @@ lib_static: ## Build as a STATIC library in DEBUG mode
 	      -D$(CMAKE_OPT_PREFIX)_BUILD_TYPE="static" \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=OFF \
 	      -DCMAKE_BUILD_TYPE=Debug
+	$(call SYNC_COMPILE_COMMANDS)
 	cmake --build build --config Debug
 
 lib_shared: ## Build as a SHARED library in DEBUG mode
@@ -122,6 +136,7 @@ lib_shared: ## Build as a SHARED library in DEBUG mode
 	      -D$(CMAKE_OPT_PREFIX)_BUILD_TYPE="shared" \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=OFF \
 	      -DCMAKE_BUILD_TYPE=Debug
+	$(call SYNC_COMPILE_COMMANDS)
 	cmake --build build --config Debug
 
 lib_header_only: ## Build as a HEADER-ONLY library
@@ -132,6 +147,7 @@ lib_header_only: ## Build as a HEADER-ONLY library
 	      -D$(CMAKE_OPT_PREFIX)_BUILD_TYPE="header-only" \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=OFF \
 	      -DCMAKE_BUILD_TYPE=Debug
+	$(call SYNC_COMPILE_COMMANDS)
 	cmake --build build --config Debug
 
 # ==========================================================
@@ -143,6 +159,7 @@ test_ctest: ## Configure, rebuild, and run CTest
 	      -DCMAKE_CXX_COMPILER=$(CXX) \
 	      -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=ON
+	$(call SYNC_COMPILE_COMMANDS)
 	cmake --build build --config Release
 	cd build && ctest -C Release -VV
 
@@ -152,6 +169,7 @@ test_gtest: ## Configure, rebuild, and run all GTest executables directly
 	      -DCMAKE_CXX_COMPILER=$(CXX) \
 	      -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) \
 	      -D$(CMAKE_OPT_PREFIX)_ENABLE_UNIT_TESTING=ON
+	$(call SYNC_COMPILE_COMMANDS)
 	cmake --build build --config Release
 	@for test in build/test/*_Test; do \
 	  echo ">>> Running $$test"; \
