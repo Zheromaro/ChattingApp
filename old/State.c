@@ -1,10 +1,6 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 #include <Stack.h>
-#include "GameConstant.h"
-#include "LoopLogic/State.h"
-#include "GameLogic/Board.h"
-#include "LoopLogic/appSettings.h"
 
 #define MAX_CONTEXT_NUM 10
 
@@ -25,7 +21,7 @@ bool StateInit()
 {
     stateStack = NewStack(sizeof(State), callObj);
     ResetContext(contextTable ,&contextCount);
-    
+
     return true;
 }
 void StateUpdate() // <- Enter & Exit
@@ -53,7 +49,7 @@ void StateRelease()
     {
         if (current && current->exit)
             ((PExit)current->exit)();
-        
+
         free(current);
         current = Pop(stateStack);
     }
@@ -87,9 +83,9 @@ void pushState(State newState, const char* format, ...)
                 strcpy(val, src);
                 break;
             }
-            case ' ': 
+            case ' ':
                 break;
-            case '%': 
+            case '%':
                 printf("format specifier of %% is not supported");
                 break;
             case 'G': // this the costome game part
@@ -115,7 +111,7 @@ void pushState(State newState, const char* format, ...)
             default:
                 printf("Unknown format specifier: %c\n", *format);
         }
-        
+
         if (val)
         {
             if (contextCount < MAX_CONTEXT_NUM)
@@ -133,7 +129,7 @@ void pushState(State newState, const char* format, ...)
     // Change State
     if (current)
         Puch(stateStack, current);
-    
+
     State *s = malloc(sizeof(State));
     *s = newState;
     holdState = s;
@@ -167,14 +163,14 @@ void ProcessInput()
     }
 
     if (current && current->processInput)
-        ((PProcessInput)current->processInput)(event); 
+        ((PProcessInput)current->processInput)(event);
 }
 void Update()
 {
     int time_to_wait = SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME);
     if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
         SDL_Delay(time_to_wait);
-    
+
     float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
 
     last_frame_time = SDL_GetTicks();
@@ -187,12 +183,12 @@ void Render(SDL_Renderer *renderer)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    
-    // here we start drawing our game 
+
+    // here we start drawing our game
     if (current && current->render)
         ((PRender)current->render)(renderer);
 
-    SDL_RenderPresent(renderer);   
+    SDL_RenderPresent(renderer);
 }
 
 // private
