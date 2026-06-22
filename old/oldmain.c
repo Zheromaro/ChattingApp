@@ -61,7 +61,7 @@ void destroy_window(void){
     StateRelease();
 }
 
-int main(){
+int oldmain(){
     gameIsRunning = initialize_window();
     if (gameIsRunning == false) {
         destroy_window();

@@ -1,30 +1,19 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include "LoopLogic/UI.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define CLAY_IMPLEMENTATION
-#include "clay.h"
-#include "clay_renderer_SDL3.c"
 
 #define SDL_FLAGS SDL_INIT_VIDEO
 #define WINDOW_TITLE "Zahrawi"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
-#define CLAY_MEMORY_SIZE 1024 * 1024  // 1MB for Clay arena
 
-typedef struct Game {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    TTF_TextEngine *textEngine;
-    TTF_Font **fonts;
-    Clay_SDL3RendererData clayRenderer;
-    bool running;
-} Game;
 
-bool init_sdl(Game *g) {
+bool init_app(Game *g) {
     if (!SDL_Init(SDL_FLAGS)) {
         fprintf(stderr, "Error initializing SDL3: %s\n", SDL_GetError());
         return false;
@@ -61,61 +50,97 @@ bool init_sdl(Game *g) {
         fprintf(stderr, "Font load failed: %s\n", SDL_GetError());
         return false;
     }
-
     g->fonts = malloc(sizeof(TTF_Font *) * 1);
     g->fonts[0] = font;
 
-    // Clay renderer data
-    g->clayRenderer = (Clay_SDL3RendererData){
-        .renderer = g->renderer,
-        .textEngine = g->textEngine,
-        .fonts = g->fonts,
-    };
-
-    // Initialize Clay
-    size_t clayMemSize = Clay_MinMemorySize();
-    void *clayMemory = malloc(SDL_max(CLAY_MEMORY_SIZE, clayMemSize));
-    Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(SDL_max(CLAY_MEMORY_SIZE, clayMemSize), clayMemory);
-
-    Clay_Initialize(arena, (Clay_Dimensions){ WINDOW_WIDTH, WINDOW_HEIGHT }, (Clay_ErrorHandler){0});
+    // UI
+    if (!UI_Init(WINDOW_WIDTH, WINDOW_HEIGHT, g)) {
+        fprintf(stderr, "Error initializing UI\n");
+        return false;
+    }
 
     g->running = true;
     return true;
 }
 
-void loop(Game *g) {
-    float mouseX = 0, mouseY = 0;
-    bool mouseDown = false;
-
-    while (g->running) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            switch (e.type) {
-                case SDL_EVENT_QUIT:
-                    g->running = false;
-                    break;
-                case SDL_EVENT_MOUSE_MOTION:
-                    mouseX = e.motion.x;
-                    mouseY = e.motion.y;
-                    break;
-                case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                    if (e.button.button == SDL_BUTTON_LEFT) mouseDown = true;
-                    break;
-                case SDL_EVENT_MOUSE_BUTTON_UP:
-                    if (e.button.button == SDL_BUTTON_LEFT) mouseDown = false;
-                    break;
-                case SDL_EVENT_MOUSE_WHEEL:
-                    Clay_UpdateScrollContainers(true, (Clay_Vector2){ e.wheel.x, e.wheel.y }, 0.016f);
-                    break;
-            }
+void free_app(Game *g) {
+    if (g->fonts) {
+        for (int i = 0; i < 1; i++) {
+            TTF_CloseFont(g->fonts[i]);
+            g->fonts[i] = NULL;
         }
+        free(g->fonts);
+        g->fonts = NULL;
+    }
+    if (g->textEngine != NULL) {
+        TTF_DestroyRendererTextEngine(g->textEngine);
+        g->textEngine = NULL;
+    }
+    if (g->renderer != NULL) {
+        SDL_DestroyRenderer(g->renderer);
+        g->renderer = NULL;
+    }
+    if (g->window != NULL) {
+        SDL_DestroyWindow(g->window);
+        g->window = NULL;
+    }
+    UI_Free();
+    TTF_Quit();
+    SDL_Quit();
+}
 
-        // --- Update Clay input state ---
-        int w, h;
-        SDL_GetWindowSize(g->window, &w, &h);
-        Clay_SetLayoutDimensions((Clay_Dimensions){ (float)w, (float)h });
-        Clay_SetPointerState((Clay_Vector2){ mouseX, mouseY }, mouseDown);
+// loop functions
+void input(Game *g) {
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+        switch (e.type) {
+            case SDL_EVENT_QUIT:
+                g->running = false;
+                break;
+            case SDL_EVENT_KEY_DOWN:
+                if (e.key.key == SDLK_ESCAPE)
+                    g->running = false;
+                break;
+        }
+    }
+}
 
+Uint64 last_tick = 0;
+Uint64 now = 0;
+Uint64 frame_time = 0;
+Uint64 target_ns = 1000000000ULL / 60;   // 60 FPS cap (optional)
+float dt = 0;
+void update() {
+    now = SDL_GetTicksNS();
+    dt   = (now - last_tick) / 1000000000.0f;  /* seconds */
+    last_tick  = now;
+
+    // safety clamp: if we hit a breakpoint dt doesn't explode
+    if (dt > 0.25f) dt = 0.25f;
+
+    UI_Update();
+
+    // frame cap
+    frame_time = SDL_GetTicksNS() - now;
+    if (frame_time < target_ns) {
+        SDL_DelayNS(target_ns - frame_time);
+    }
+}
+
+void render(Game *g) {
+    // clear background
+    SDL_SetRenderDrawColor(g->renderer, 30, 30, 30, 255);
+    SDL_RenderClear(g->renderer);
+
+    /* draw here: SDL_RenderRect(), TTF_RenderText_Blended(), UI */
+
+    // push to screen
+    SDL_RenderPresent(g->renderer);
+}
+
+void loop(Game *g) {
+    while (g->running) {
+        input(g);
         // --- Build UI ---
         Clay_BeginLayout();
 
@@ -140,50 +165,24 @@ void loop(Game *g) {
         }
 
         Clay_RenderCommandArray commands = Clay_EndLayout(1);
+        // --- End UI ---
+        update();
+        UI_Render(&commands);
 
-        // --- Render ---
-        SDL_SetRenderDrawColor(g->renderer, 30, 30, 30, 255);
-        SDL_RenderClear(g->renderer);
-
-        SDL_Clay_RenderClayCommands(&g->clayRenderer, &commands);
-
-        SDL_RenderPresent(g->renderer);
     }
-}
-
-void free_sdl(Game *g) {
-    if (g->fonts) {
-        for (int i = 0; i < 1; i++) {
-            TTF_CloseFont(g->fonts[i]);
-            g->fonts[i] = NULL;
-        }
-        free(g->fonts);
-        g->fonts = NULL;
-    }
-    if (g->textEngine != NULL) {
-        TTF_DestroyRendererTextEngine(g->textEngine);
-        g->textEngine = NULL;
-    }
-    if (g->renderer != NULL) {
-        SDL_DestroyRenderer(g->renderer);
-        g->renderer = NULL;
-    }
-    if (g->window != NULL) {
-        SDL_DestroyWindow(g->window);
-        g->window = NULL;
-    }
-    TTF_Quit();
-    SDL_Quit();
 }
 
 int main(int argc, char *argv[]) {
+    (void)argc;
+    (void)argv;
+
     Game game = {0};
 
-    if (!init_sdl(&game)) {
-        free_sdl(&game);
+    if (!init_app(&game)) {
+        free_app(&game);
         return EXIT_FAILURE;
     }
     loop(&game);
-    free_sdl(&game);
+    free_app(&game);
     return EXIT_SUCCESS;
 }
