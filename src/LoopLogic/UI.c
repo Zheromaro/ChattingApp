@@ -85,10 +85,7 @@ void UI_Update() {
 }
 
 void UI_Render(Clay_RenderCommandArray *commands) {
-    SDL_SetRenderDrawColor(gameInstance->renderer, 30, 30, 30, 255);
-    SDL_RenderClear(gameInstance->renderer);
     SDL_Clay_RenderClayCommands(&clayRenderer, commands); // apply CLAY commands
-    SDL_RenderPresent(gameInstance->renderer);
 }
 
 void UI_Free() {

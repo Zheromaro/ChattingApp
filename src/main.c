@@ -1,7 +1,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <LoopLogic/SETTINGS.h>
 #include "LoopLogic/UI.h"
+#include "LoopLogic/LoopFunc.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -89,85 +91,12 @@ void free_app(Game *g) {
     SDL_Quit();
 }
 
-// loop functions
-void input(Game *g) {
-    SDL_Event e;
-    while (SDL_PollEvent(&e)) {
-        switch (e.type) {
-            case SDL_EVENT_QUIT:
-                g->running = false;
-                break;
-            case SDL_EVENT_KEY_DOWN:
-                if (e.key.key == SDLK_ESCAPE)
-                    g->running = false;
-                break;
-        }
-    }
-}
-
-Uint64 last_tick = 0;
-Uint64 now = 0;
-Uint64 frame_time = 0;
-Uint64 target_ns = 1000000000ULL / 60;   // 60 FPS cap (optional)
-float dt = 0;
-void update() {
-    now = SDL_GetTicksNS();
-    dt   = (now - last_tick) / 1000000000.0f;  /* seconds */
-    last_tick  = now;
-
-    // safety clamp: if we hit a breakpoint dt doesn't explode
-    if (dt > 0.25f) dt = 0.25f;
-
-    UI_Update();
-
-    // frame cap
-    frame_time = SDL_GetTicksNS() - now;
-    if (frame_time < target_ns) {
-        SDL_DelayNS(target_ns - frame_time);
-    }
-}
-
-void render(Game *g) {
-    // clear background
-    SDL_SetRenderDrawColor(g->renderer, 30, 30, 30, 255);
-    SDL_RenderClear(g->renderer);
-
-    /* draw here: SDL_RenderRect(), TTF_RenderText_Blended(), UI */
-
-    // push to screen
-    SDL_RenderPresent(g->renderer);
-}
 
 void loop(Game *g) {
     while (g->running) {
-        input(g);
-        // --- Build UI ---
-        Clay_BeginLayout();
-
-        CLAY(CLAY_ID("MainContainer"), {
-            .layout = {
-                .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-                .childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER }
-            },
-            .backgroundColor = { 40, 40, 40, 255 }
-        }) {
-            CLAY(CLAY_ID("HelloText"), {
-                .layout = { .padding = { 20, 20, 10, 10 } },
-                .backgroundColor = { 80, 120, 200, 255 },
-                .cornerRadius = { 8, 8, 8, 8 }
-            }) {
-                CLAY_TEXT(CLAY_STRING("Hello from Clay + SDL3!"), CLAY_TEXT_CONFIG({
-                    .fontId = 0,
-                    .fontSize = 24,
-                    .textColor = { 255, 255, 255, 255 }
-                }));
-            }
-        }
-
-        Clay_RenderCommandArray commands = Clay_EndLayout(1);
-        // --- End UI ---
-        update();
-        UI_Render(&commands);
+        Input(g);
+        Update();
+        Render(g->renderer);
 
     }
 }
