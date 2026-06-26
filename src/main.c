@@ -1,12 +1,12 @@
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-#include <SDL3_ttf/SDL_ttf.h>
-#include <LoopLogic/SETTINGS.h>
-#include "LoopLogic/UI.h"
-#include "LoopFunc.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#include <SDL3_ttf/SDL_ttf.h>
+#include "SETTINGS.h"
+#include "LoopFunc.h"
+#include "LoopLogic/UI.h"
 
 
 #define SDL_FLAGS SDL_INIT_VIDEO

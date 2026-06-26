@@ -1,6 +1,8 @@
 #include <SDL3/SDL.h>
 #include "LoopFunc.h"
-#include "States.h"
+#include "LoopLogic/UI.h"
+#include "AppLogic/Chat.h"
+
 
 static Uint64 last_tick = 0;
 static Uint64 now = 0;
@@ -19,6 +21,7 @@ void Exit(void) {
 
 void Input(Game *g) {
     while (SDL_PollEvent(&event)) {
+        UI_Input(&event);
         switch (event.type) {
             case SDL_EVENT_QUIT:
                 g->running = false;
@@ -28,7 +31,6 @@ void Input(Game *g) {
                     g->running = false;
                 break;
         }
-        States_Input(&event);
     }
 }
 
@@ -39,7 +41,9 @@ void Update(void) {
 
     if (delta_time > 0.25f) delta_time = 0.25f;
 
-    States_Update(delta_time);
+    // update functions
+    UI_Update();
+    ChatUpdate(delta_time);
 
     // Frame cap
     frame_time = SDL_GetTicksNS() - now;
@@ -51,8 +55,6 @@ void Update(void) {
 void Render(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
     SDL_RenderClear(renderer);
-
-    States_Render(renderer);
-
+    UI_Render();
     SDL_RenderPresent(renderer);
 }

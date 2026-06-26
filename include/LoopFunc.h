@@ -2,7 +2,7 @@
 #define LOOPFUNC_H
 
 #include <SDL3/SDL.h>
-#include <LoopLogic/SETTINGS.h>
+#include <SETTINGS.h>
 
 
 void Enter(void);
