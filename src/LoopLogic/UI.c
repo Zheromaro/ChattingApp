@@ -1,9 +1,11 @@
+#include "States.h"
 #define CLAY_IMPLEMENTATION
 #include <stdlib.h>
 #include <stdio.h>
 #include <clay.h>
 #include <clay_renderer_SDL3.c>
 #include "LoopLogic/UI.h"
+#include "LoopFunc.h"
 
 #define CLAY_MEMORY_SIZE 1024 * 1024  // 1MB for Clay arena
 
@@ -12,8 +14,8 @@ static void *clayMemory = NULL;
 static int windowWidth = 0;
 static int windowHeight = 0;
 static Game *gameInstance = NULL;
+static Clay_RenderCommandArray *commands = NULL;
 
-// Input state
 static float mouseX = 0.0f;
 static float mouseY = 0.0f;
 static bool mouseDown = false;
@@ -55,7 +57,17 @@ bool UI_Init(int width, int height, Game *g) {
     return true;
 }
 
-void UI_Input(SDL_Event e) {
+void UI_Free() {
+    if (clayMemory != NULL) {
+        free(clayMemory);
+        clayMemory = NULL;
+    }
+    gameInstance = NULL;
+}
+
+
+
+static void UI_Input(SDL_Event e) {
     while (SDL_PollEvent(&e)) {
         switch (e.type) {
             case SDL_EVENT_QUIT:
@@ -78,20 +90,18 @@ void UI_Input(SDL_Event e) {
     }
 }
 
-void UI_Update() {
+static void UI_Update(float dt) {
     SDL_GetWindowSize(gameInstance->window, &windowWidth, &windowHeight);
     Clay_SetLayoutDimensions((Clay_Dimensions){ (float)windowWidth, (float)windowHeight });
     Clay_SetPointerState((Clay_Vector2){ mouseX, mouseY }, mouseDown);
 }
 
-void UI_Render(Clay_RenderCommandArray *commands) {
+static void UI_Render(SDL_Renderer *renderer) {
     SDL_Clay_RenderClayCommands(&clayRenderer, commands); // apply CLAY commands
 }
 
-void UI_Free() {
-    if (clayMemory != NULL) {
-        free(clayMemory);
-        clayMemory = NULL;
-    }
-    gameInstance = NULL;
-}
+State ui = {
+    .Update = UI_Update,
+    .Input = UI_Input,
+    .Render = UI_Render,
+};

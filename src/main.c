@@ -3,7 +3,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <LoopLogic/SETTINGS.h>
 #include "LoopLogic/UI.h"
-#include "LoopLogic/LoopFunc.h"
+#include "LoopFunc.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -91,14 +91,14 @@ void free_app(Game *g) {
     SDL_Quit();
 }
 
-
 void loop(Game *g) {
+    Enter();
     while (g->running) {
         Input(g);
         Update();
         Render(g->renderer);
-
     }
+    Exit();
 }
 
 int main(int argc, char *argv[]) {
