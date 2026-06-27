@@ -16,11 +16,11 @@ void UI_Free(void);
 void UI_Layout(Clay_RenderCommandArray command);
 void UI_Input(SDL_Event* e);
 void UI_Update(float deltaTime);
-void UI_Render();
+void UI_Render(void);
 
-float UI_GetMouseX();
-float UI_GetMouseY();
-bool UI_GetMouseDown();
+float UI_GetMouseX(void);
+float UI_GetMouseY(void);
+bool UI_GetMouseDown(void);
 
 // TODO: Error functions
 

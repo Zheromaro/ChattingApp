@@ -1,3 +1,6 @@
+#include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_video.h>
+#include <SDL3_image/SDL_image.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -39,6 +42,18 @@ bool init_app(App *a) {
         return false;
     }
     SDL_SetRenderVSync(a->renderer, 1);
+
+    // window icon
+    const char *driver = SDL_GetCurrentVideoDriver();
+    if (!(driver && SDL_strcmp(driver, "wayland") == 0)) {
+        SDL_Surface *icon = IMG_Load("assets/appLogo.png");
+        if (icon == NULL)
+            fprintf(stderr, "Error loading window icon: %s\n", SDL_GetError());
+        if (!SDL_SetWindowIcon(a->window, icon))
+            fprintf(stderr, "Error setting window icon: %s\n", SDL_GetError());
+
+        SDL_DestroySurface(icon);
+    }
 
     // SDL_ttf
     if (!TTF_Init()) {

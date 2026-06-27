@@ -85,7 +85,7 @@ bool UI_Init(int width, int height, SDL_Renderer *renderer, TTF_TextEngine *text
     return true;
 }
 
-void UI_Free() {
+void UI_Free(void) {
     if (clayMemory != NULL) {
         free(clayMemory);
         clayMemory = NULL;
@@ -129,19 +129,19 @@ void UI_Update(float deltaTime) {
     scrollY = 0.0f;
 }
 
-void UI_Render() {
+void UI_Render(void) {
     SDL_Clay_RenderClayCommands(&clayRenderer, &commands); // apply CLAY commands
 }
 
 // getters
-float UI_GetMouseX() {
+float UI_GetMouseX(void) {
     return mouseX;
 }
 
-float UI_GetMouseY() {
+float UI_GetMouseY(void) {
     return mouseY;
 }
 
-bool UI_GetMouseDown() {
+bool UI_GetMouseDown(void) {
     return mouseDown;
 }

@@ -11,7 +11,7 @@ include(cmake/Vcpkg/Vcpkg.cmake)
 project(
   ChattingApp
   VERSION 0.1.0
-  LANGUAGES C
+  LANGUAGES C CXX
 )
 
 message(STATUS "🚀 Starting configuration for ${PROJECT_NAME} v${PROJECT_VERSION}")
@@ -159,11 +159,11 @@ if(NOT ${PROJECT_NAME}_BUILD_TYPE STREQUAL "header-only")
 )
 
   target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBS})
-  target_include_directories(${PROJECT_NAME} PUBLIC ${EXTERNAL_LIBS_INCLUDE})
+  target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${EXTERNAL_LIBS_INCLUDE})
 
   if(${PROJECT_NAME}_BUILD_TYPE STREQUAL "executable" AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
     target_link_libraries(${PROJECT_NAME}_LIB PRIVATE ${LINK_LIBS})
-    target_include_directories(${PROJECT_NAME}_LIB PUBLIC ${EXTERNAL_LIBS_INCLUDE})
+    target_include_directories(${PROJECT_NAME}_LIB SYSTEM PUBLIC ${EXTERNAL_LIBS_INCLUDE})
   endif()
 endif()
 

@@ -22,7 +22,7 @@ void Exit(void) {
 
 }
 
-void Input() {
+void Input(void) {
     while (SDL_PollEvent(&event)) {
         UI_Input(&event);
         switch (event.type) {

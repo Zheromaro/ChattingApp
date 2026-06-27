@@ -1,11 +1,8 @@
 #include <clay.h>
-#include <string.h>
 #include "AppLogic/UI/MainPanel.h"
 #include "AppLogic/UI/CONST_UI.h"
 
-// -----------------------------------------------------------------------------
-// 2. DATA MODEL
-// -----------------------------------------------------------------------------
+// ===== DATA =====
 typedef enum {
     MSG_DIR_INCOMING,
     MSG_DIR_OUTGOING
@@ -28,14 +25,7 @@ static Message s_messages[] = {
 };
 static int s_msgCount = sizeof(s_messages) / sizeof(s_messages[0]);
 
-// Helper: build a Clay_String from runtime char* (CLAY_STRING only works with literals)
-#define CLAY_STR(cstr) \
-    (Clay_String){ .length = (int32_t)strlen(cstr), .chars = (cstr), .isStaticallyAllocated = true }
-
-// -----------------------------------------------------------------------------
-// 3. COMPONENTS
-// -----------------------------------------------------------------------------
-
+// ===== UI =====
 static void ChatHeader(void) {
     CLAY(CLAY_ID("ChatHeader"), {
         .layout = {
