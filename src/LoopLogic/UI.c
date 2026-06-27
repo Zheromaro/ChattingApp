@@ -52,8 +52,8 @@ static Clay_Dimensions Clay_SDL3_MeasureText(Clay_StringSlice text, Clay_TextEle
     return (Clay_Dimensions){ (float)w, (float)h };
 }
 
-bool UI_Init(int width, int height, Game *g) {
-    if (!g || !g->renderer || !g->textEngine || !g->fonts) {
+bool UI_Init(int width, int height, SDL_Renderer *renderer, TTF_TextEngine *textEngine, TTF_Font **fonts) {
+    if (renderer == NULL|| textEngine == NULL|| fonts == NULL) {
         fprintf(stderr, "UI_Init: Invalid game state or missing SDL resources");
         return false;
     }
@@ -63,9 +63,9 @@ bool UI_Init(int width, int height, Game *g) {
 
     // Setup the Clay SDL3 renderer data
     clayRenderer = (Clay_SDL3RendererData){
-        .renderer = g->renderer,
-        .textEngine = g->textEngine,
-        .fonts = g->fonts,
+        .renderer = renderer,
+        .textEngine = textEngine,
+        .fonts = fonts,
     };
 
     // Initialize Clay

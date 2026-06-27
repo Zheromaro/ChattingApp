@@ -1,20 +1,7 @@
 #include <clay.h>
 #include <string.h>
-#include "AppLogic/MainPanel.h"
-
-// -----------------------------------------------------------------------------
-// 1. STYLE SYSTEM (Telegram palette)
-// -----------------------------------------------------------------------------
-static const Clay_Color C_WHITE         = {255, 255, 255, 255};
-static const Clay_Color C_BLACK         = {0, 0, 0, 255};
-static const Clay_Color C_TELEGRAM_BLUE = {44, 147, 227, 255};
-static const Clay_Color C_BG_GREY       = {231, 235, 240, 255};
-static const Clay_Color C_INPUT_BG      = {244, 244, 245, 255};
-static const Clay_Color C_PLACEHOLDER   = {142, 142, 147, 255};
-
-static const Clay_CornerRadius RADIUS_INCOMING = {12, 12, 4, 12};
-static const Clay_CornerRadius RADIUS_OUTGOING = {12, 12, 12, 4};
-static const Clay_CornerRadius RADIUS_PILL     = {18, 18, 18, 18};
+#include "AppLogic/UI/MainPanel.h"
+#include "AppLogic/UI/CONST_UI.h"
 
 // -----------------------------------------------------------------------------
 // 2. DATA MODEL

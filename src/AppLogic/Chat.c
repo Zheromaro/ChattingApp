@@ -1,6 +1,6 @@
 #include "LoopLogic/UI.h"
-#include "AppLogic/SideBar.h"
-#include "AppLogic/MainPanel.h"
+#include "AppLogic/UI/SideBar.h"
+#include "AppLogic/UI/MainPanel.h"
 
 
 void ChatUpdate(float delta_time) {
@@ -17,7 +17,6 @@ void ChatUpdate(float delta_time) {
         MainPanel();
     }
 
-    // Capture the processed commands layout and assign back to UI system
     Clay_RenderCommandArray renderCommands = Clay_EndLayout(delta_time);
     UI_Layout(renderCommands);
 }

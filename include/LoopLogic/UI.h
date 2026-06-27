@@ -5,12 +5,10 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <clay.h>
-#include "SETTINGS.h"
-
 
 // Initialize Clay UI system.
 // Returns false on failure
-bool UI_Init(int width, int height, Game *game);
+bool UI_Init(int width, int height, SDL_Renderer *renderer, TTF_TextEngine *textEngine, TTF_Font **fonts);
 
 // Cleanup Clay resources
 void UI_Free(void);

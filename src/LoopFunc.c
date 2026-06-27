@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include <stdbool.h>
 #include "LoopFunc.h"
 #include "LoopLogic/UI.h"
 #include "AppLogic/Chat.h"
@@ -10,8 +11,10 @@ static Uint64 frame_time = 0;
 static Uint64 target_ns = 1000000000ULL / 60;
 static float delta_time = 0;
 static SDL_Event event;
+static bool* prunning = NULL;
 
-void Enter(void) {
+void Enter(bool* running) {
+    prunning = running;
     last_tick = SDL_GetTicksNS();
 }
 
@@ -19,16 +22,16 @@ void Exit(void) {
 
 }
 
-void Input(Game *g) {
+void Input() {
     while (SDL_PollEvent(&event)) {
         UI_Input(&event);
         switch (event.type) {
             case SDL_EVENT_QUIT:
-                g->running = false;
+                *prunning = false;
                 break;
             case SDL_EVENT_KEY_DOWN:
                 if (event.key.key == SDLK_ESCAPE)
-                    g->running = false;
+                    *prunning = false;
                 break;
         }
     }

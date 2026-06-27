@@ -2,12 +2,10 @@
 #define LOOPFUNC_H
 
 #include <SDL3/SDL.h>
-#include <SETTINGS.h>
 
-
-void Enter(void);
+void Enter(bool* running);
 void Exit(void);
-void Input(Game *g);
+void Input(void);
 void Update(void);
 void Render(SDL_Renderer *renderer);
 

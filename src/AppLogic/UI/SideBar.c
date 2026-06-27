@@ -1,5 +1,5 @@
 #include <clay.h>
-#include "AppLogic/SideBar.h"
+#include "AppLogic/UI/SideBar.h"
 
 void SideBar() {
     CLAY(CLAY_ID("SideBar"), {
