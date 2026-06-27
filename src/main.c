@@ -21,7 +21,7 @@ bool init_app(Game *g) {
         return false;
     }
 
-    g->window = SDL_CreateWindow(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    g->window = SDL_CreateWindow(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE);
     if (g->window == NULL) {
         fprintf(stderr, "Error Creating Window: %s\n", SDL_GetError());
         return false;

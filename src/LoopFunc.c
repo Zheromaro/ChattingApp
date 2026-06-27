@@ -42,7 +42,7 @@ void Update(void) {
     if (delta_time > 0.25f) delta_time = 0.25f;
 
     // update functions
-    UI_Update();
+    UI_Update(delta_time);
     ChatUpdate(delta_time);
 
     // Frame cap

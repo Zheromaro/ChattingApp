@@ -10,12 +10,47 @@ static Clay_SDL3RendererData clayRenderer = {0};
 static void *clayMemory = NULL;
 static int windowWidth = 0;
 static int windowHeight = 0;
-static Game *gameInstance = NULL;
 static Clay_RenderCommandArray commands = {0};
 
 static float mouseX = 0.0f;
 static float mouseY = 0.0f;
+static float scrollX = 0.0f;
+static float scrollY = 0.0f;
 static bool mouseDown = false;
+
+static void HandleClayErrors(Clay_ErrorData errorData) {
+    fprintf(stderr, "Clay Error [%d]: %s\n", errorData.errorType, errorData.errorText.chars);
+}
+
+static Clay_Dimensions Clay_SDL3_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData) {
+    Clay_SDL3RendererData *rendererData = (Clay_SDL3RendererData*)userData;
+    TTF_Font *font = rendererData->fonts[config->fontId];
+    if (!font) return (Clay_Dimensions){0, 0};
+
+    // Set the correct font size for this measurement
+    TTF_SetFontSize(font, config->fontSize);
+
+    // Create a temporary text object to measure it.
+    // Note: Clay_StringSlice is NOT null-terminated, but TTF_CreateText takes a length.
+    TTF_Text *textObj = TTF_CreateText(rendererData->textEngine, font, text.chars, text.length);
+    if (!textObj) return (Clay_Dimensions){0, 0};
+
+    int w = 0, h = 0;
+    TTF_GetTextSize(textObj, &w, &h);
+    TTF_DestroyText(textObj);
+
+    // Apply letter spacing if configured
+    if (config->letterSpacing > 0 && text.length > 1) {
+        w += (text.length - 1) * config->letterSpacing;
+    }
+
+    // Apply explicit line height if configured, otherwise use measured height
+    if (config->lineHeight > 0) {
+        h = config->lineHeight;
+    }
+
+    return (Clay_Dimensions){ (float)w, (float)h };
+}
 
 bool UI_Init(int width, int height, Game *g) {
     if (!g || !g->renderer || !g->textEngine || !g->fonts) {
@@ -23,10 +58,8 @@ bool UI_Init(int width, int height, Game *g) {
         return false;
     }
 
-    gameInstance = g;
     windowWidth = width;
     windowHeight = height;
-
 
     // Setup the Clay SDL3 renderer data
     clayRenderer = (Clay_SDL3RendererData){
@@ -45,7 +78,9 @@ bool UI_Init(int width, int height, Game *g) {
 
     Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(SDL_max(CLAY_MEMORY_SIZE, clayMemSize), clayMemory);
 
-    Clay_Initialize(arena, (Clay_Dimensions){ width, height }, (Clay_ErrorHandler){0});
+    Clay_Initialize(arena, (Clay_Dimensions){ width, height }, (Clay_ErrorHandler){.errorHandlerFunction = HandleClayErrors});
+
+    Clay_SetMeasureTextFunction(Clay_SDL3_MeasureText, &clayRenderer);
 
     return true;
 }
@@ -55,7 +90,6 @@ void UI_Free() {
         free(clayMemory);
         clayMemory = NULL;
     }
-    gameInstance = NULL;
 }
 
 void UI_Layout(Clay_RenderCommandArray command) {
@@ -64,8 +98,9 @@ void UI_Layout(Clay_RenderCommandArray command) {
 
 void UI_Input(SDL_Event* e) {
     switch (e->type) {
-        case SDL_EVENT_QUIT:
-            gameInstance->running = false;
+        case SDL_EVENT_WINDOW_RESIZED:
+            windowWidth = e->window.data1;
+            windowHeight = e->window.data2;
             break;
         case SDL_EVENT_MOUSE_MOTION:
             mouseX = e->motion.x;
@@ -78,16 +113,20 @@ void UI_Input(SDL_Event* e) {
             if (e->button.button == SDL_BUTTON_LEFT) mouseDown = false;
             break;
         case SDL_EVENT_MOUSE_WHEEL:
-            Clay_UpdateScrollContainers(true, (Clay_Vector2){ e->wheel.x, e->wheel.y }, 0.016f);
+            // Accumulate scroll deltas
+            scrollX += e->wheel.x;
+            scrollY += e->wheel.y;
             break;
     }
-
 }
 
-void UI_Update() {
-    SDL_GetWindowSize(gameInstance->window, &windowWidth, &windowHeight);
+void UI_Update(float deltaTime) {
     Clay_SetLayoutDimensions((Clay_Dimensions){ (float)windowWidth, (float)windowHeight });
     Clay_SetPointerState((Clay_Vector2){ mouseX, mouseY }, mouseDown);
+    Clay_UpdateScrollContainers(true, (Clay_Vector2){ scrollX, scrollY }, deltaTime);
+
+    scrollX = 0.0f;
+    scrollY = 0.0f;
 }
 
 void UI_Render() {
