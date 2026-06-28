@@ -11,10 +11,8 @@ typedef enum {
 typedef struct {
     MsgDirection dir;
     const char *text;
-    // Future: uint64_t id, timestamp, delivery_status, etc.
 } Message;
 
-// Demo conversation (replace with your dynamic array later)
 static Message s_messages[] = {
     {MSG_DIR_INCOMING, "Hey there! How is the new UI engine holding up?"},
     {MSG_DIR_OUTGOING, "It's amazing! The layouts compile in microseconds."},
@@ -36,7 +34,8 @@ static void ChatHeader(void) {
         },
         .backgroundColor = C_WHITE
     }) {
-        CLAY_TEXT(CLAY_STRING("Alex"), {.fontSize = 18, .textColor = C_BLACK});
+        // FIXED: Added FONT_ID_TITLE_18 and comma
+        CLAY_TEXT(CLAY_STRING("Alex"), {.fontId = FONT_ID_TITLE_18, .fontSize = 18, .textColor = C_BLACK});
     }
 }
 
@@ -47,7 +46,6 @@ static void MessageBubble(Message *msg, int index) {
     Clay_Color textColor   = outgoing ? C_WHITE        : C_BLACK;
     Clay_CornerRadius radius = outgoing ? RADIUS_OUTGOING : RADIUS_INCOMING;
 
-    // Row spans full width. For outgoing messages, a flex spacer pushes the bubble right.
     CLAY(CLAY_IDI("MsgRow", index), {
         .layout = {
             .layoutDirection = CLAY_LEFT_TO_RIGHT,
@@ -60,8 +58,6 @@ static void MessageBubble(Message *msg, int index) {
             }) {}
         }
 
-        // Bubble: fits text but caps at 500px so wrapping feels like Telegram.
-        // Clay automatically wraps CLAY_TEXT inside a width-constrained parent.
         CLAY(CLAY_IDI("MsgBubble", index), {
             .layout = {
                 .padding = CLAY_PADDING_ALL(12),
@@ -73,7 +69,9 @@ static void MessageBubble(Message *msg, int index) {
             .backgroundColor = bubbleColor,
             .cornerRadius = radius
         }) {
+            // FIXED: Added FONT_ID_BODY_15
             CLAY_TEXT(CLAY_STR(msg->text), {
+                .fontId = FONT_ID_BODY_15,
                 .fontSize = 15,
                 .textColor = textColor,
                 .wrapMode = CLAY_TEXT_WRAP_WORDS
@@ -93,7 +91,6 @@ static void InputBar(void) {
         },
         .backgroundColor = C_WHITE
     }) {
-        // Input capsule
         CLAY(CLAY_ID("InputCapsule"), {
             .layout = {
                 .padding = CLAY_PADDING_ALL(10),
@@ -103,10 +100,10 @@ static void InputBar(void) {
             .backgroundColor = C_INPUT_BG,
             .cornerRadius = RADIUS_PILL
         }) {
-            CLAY_TEXT(CLAY_STRING("Write a message..."), {.fontSize = 15, .textColor = C_PLACEHOLDER});
+            // FIXED: Added FONT_ID_BODY_15
+            CLAY_TEXT(CLAY_STRING("Write a message..."), {.fontId = FONT_ID_BODY_15, .fontSize = 15, .textColor = C_PLACEHOLDER});
         }
 
-        // Send button
         CLAY(CLAY_ID("SendButton"), {
             .layout = {
                 .padding = {.left = 16, .right = 16, .top = 10, .bottom = 10},
@@ -116,14 +113,11 @@ static void InputBar(void) {
             .backgroundColor = C_TELEGRAM_BLUE,
             .cornerRadius = RADIUS_PILL
         }) {
-            CLAY_TEXT(CLAY_STRING("Send"), {.fontSize = 15, .textColor = C_WHITE});
+            // FIXED: Added FONT_ID_BODY_15
+            CLAY_TEXT(CLAY_STRING("Send"), {.fontId = FONT_ID_BODY_15, .fontSize = 15, .textColor = C_WHITE});
         }
     }
 }
-
-// -----------------------------------------------------------------------------
-// 4. MAIN PANEL ASSEMBLY
-// -----------------------------------------------------------------------------
 
 void MainPanel(void) {
     CLAY(CLAY_ID("ChatWindow"), {
@@ -134,7 +128,6 @@ void MainPanel(void) {
     }) {
         ChatHeader();
 
-        // Scrollable message stream
         CLAY(CLAY_ID("MessageStream"), {
             .layout = {
                 .layoutDirection = CLAY_TOP_TO_BOTTOM,

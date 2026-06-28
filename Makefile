@@ -28,7 +28,6 @@ else ifeq ($(COMPILER),gcc)
 else
   $(error Unsupported COMPILER="$(COMPILER)". Use "gcc" or "clang")
 endif
-CFLAGS := -Wno-error=discarded-qualifiers -Wno-error=override-init -Wno-error=deprecated-declarations
 
 # 🔧 Helpers:
 # Sync compile_commands.json to .zed/ for clangd

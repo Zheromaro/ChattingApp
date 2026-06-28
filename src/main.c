@@ -9,6 +9,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include "LoopFunc.h"
 #include "LoopLogic/UI.h"
+#include "AppLogic/UI/CONST_UI.h"
 
 
 #define SDL_FLAGS SDL_INIT_VIDEO
@@ -68,13 +69,26 @@ bool init_app(App *a) {
     }
 
     // font
-    TTF_Font *font = TTF_OpenFont("assets/bit_font.ttf", 24);
-    if (font == NULL) {
-        fprintf(stderr, "Font load failed: %s\n", SDL_GetError());
+    a->fonts = malloc(sizeof(TTF_Font *) * TOTAL_FONTS);
+    if (a->fonts == NULL) {
+        fprintf(stderr, "Failed to allocate memory for fonts array\n");
         return false;
     }
-    a->fonts = malloc(sizeof(TTF_Font *) * 1);
-    a->fonts[0] = font;
+    for(int i = 0; i < TOTAL_FONTS; i++) {
+        a->fonts[i] = NULL;
+    }
+
+    const char* fontPath = "assets/bit_font.ttf";
+    a->fonts[FONT_ID_BODY_13] = TTF_OpenFont(fontPath, 13);
+    a->fonts[FONT_ID_BODY_15] = TTF_OpenFont(fontPath, 15);
+    a->fonts[FONT_ID_BODY_16] = TTF_OpenFont(fontPath, 16);
+    a->fonts[FONT_ID_TITLE_18]  = TTF_OpenFont(fontPath, 18);
+    for (int i = 0; i < TOTAL_FONTS; i++) {
+        if (a->fonts[i] == NULL) {
+            fprintf(stderr, "Font load failed for index %d: %s\n", i, SDL_GetError());
+            return false;
+        }
+    }
 
     // UI
     if (!UI_Init(WINDOW_WIDTH, WINDOW_HEIGHT, a->renderer, a->textEngine, a->fonts)) {
@@ -88,7 +102,7 @@ bool init_app(App *a) {
 
 void free_app(App *a) {
     if (a->fonts) {
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < TOTAL_FONTS; i++) {
             TTF_CloseFont(a->fonts[i]);
             a->fonts[i] = NULL;
         }

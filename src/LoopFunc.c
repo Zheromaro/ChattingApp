@@ -47,12 +47,6 @@ void Update(void) {
     // update functions
     UI_Update(delta_time);
     ChatUpdate(delta_time);
-
-    // Frame cap
-    frame_time = SDL_GetTicksNS() - now;
-    if (frame_time < target_ns) {
-        SDL_DelayNS(target_ns - frame_time);
-    }
 }
 
 void Render(SDL_Renderer *renderer) {

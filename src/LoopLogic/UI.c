@@ -11,6 +11,7 @@ static void *clayMemory = NULL;
 static int windowWidth = 0;
 static int windowHeight = 0;
 static Clay_RenderCommandArray commands = {0};
+TTF_Font *font = NULL;
 
 static float mouseX = 0.0f;
 static float mouseY = 0.0f;
@@ -23,33 +24,23 @@ static void HandleClayErrors(Clay_ErrorData errorData) {
 }
 
 static Clay_Dimensions Clay_SDL3_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData) {
-    Clay_SDL3RendererData *rendererData = (Clay_SDL3RendererData*)userData;
-    TTF_Font *font = rendererData->fonts[config->fontId];
-    if (!font) return (Clay_Dimensions){0, 0};
+    font = clayRenderer.fonts[config->fontId];
+    if (font == NULL) return (Clay_Dimensions){0, 0};
 
-    // Set the correct font size for this measurement
-    TTF_SetFontSize(font, config->fontSize);
+    int extent = 0;
+    TTF_MeasureString(font, text.chars, text.length, 100000, &extent, NULL);
 
-    // Create a temporary text object to measure it.
-    // Note: Clay_StringSlice is NOT null-terminated, but TTF_CreateText takes a length.
-    TTF_Text *textObj = TTF_CreateText(rendererData->textEngine, font, text.chars, text.length);
-    if (!textObj) return (Clay_Dimensions){0, 0};
+    int height = TTF_GetFontHeight(font);
 
-    int w = 0, h = 0;
-    TTF_GetTextSize(textObj, &w, &h);
-    TTF_DestroyText(textObj);
-
-    // Apply letter spacing if configured
     if (config->letterSpacing > 0 && text.length > 1) {
-        w += (text.length - 1) * config->letterSpacing;
+        extent += (text.length - 1) * config->letterSpacing;
     }
 
-    // Apply explicit line height if configured, otherwise use measured height
     if (config->lineHeight > 0) {
-        h = config->lineHeight;
+        height = config->lineHeight;
     }
 
-    return (Clay_Dimensions){ (float)w, (float)h };
+    return (Clay_Dimensions){ (float)extent, (float)height };
 }
 
 bool UI_Init(int width, int height, SDL_Renderer *renderer, TTF_TextEngine *textEngine, TTF_Font **fonts) {
@@ -98,10 +89,6 @@ void UI_Layout(Clay_RenderCommandArray command) {
 
 void UI_Input(SDL_Event* e) {
     switch (e->type) {
-        case SDL_EVENT_WINDOW_RESIZED:
-            windowWidth = e->window.data1;
-            windowHeight = e->window.data2;
-            break;
         case SDL_EVENT_MOUSE_MOTION:
             mouseX = e->motion.x;
             mouseY = e->motion.y;
@@ -121,6 +108,7 @@ void UI_Input(SDL_Event* e) {
 }
 
 void UI_Update(float deltaTime) {
+    SDL_GetRenderOutputSize(clayRenderer.renderer, &windowWidth, &windowHeight);
     Clay_SetLayoutDimensions((Clay_Dimensions){ (float)windowWidth, (float)windowHeight });
     Clay_SetPointerState((Clay_Vector2){ mouseX, mouseY }, mouseDown);
     Clay_UpdateScrollContainers(true, (Clay_Vector2){ scrollX, scrollY }, deltaTime);

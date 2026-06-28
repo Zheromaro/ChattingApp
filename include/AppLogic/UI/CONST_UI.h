@@ -4,6 +4,14 @@
 #include <string.h>
 #include <clay.h>
 
+enum {
+    FONT_ID_BODY_13  = 0,
+    FONT_ID_BODY_15  = 1,
+    FONT_ID_BODY_16  = 2,
+    FONT_ID_TITLE_18 = 3
+};
+#define TOTAL_FONTS 4
+
 static const Clay_Color C_WHITE         = {255, 255, 255, 255};
 static const Clay_Color C_BLACK         = {0, 0, 0, 255};
 static const Clay_Color C_TELEGRAM_BLUE = {44, 147, 227, 255};

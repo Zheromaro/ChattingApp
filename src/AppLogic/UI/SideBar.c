@@ -1,6 +1,7 @@
 #include <clay.h>
 #include <stdbool.h>
 #include "AppLogic/UI/SideBar.h"
+#include "AppLogic/UI/CONST_UI.h" // FIXED: Included constants for fonts
 
 void Avatar(int i, bool isActiveChat) {
     CLAY(CLAY_IDI("Avatar", i), {
@@ -13,14 +14,16 @@ void Avatar(int i, bool isActiveChat) {
 void Name(bool isActiveChat) {
     CLAY_TEXT(
         CLAY_STRING("Alex"),
-        { .fontSize = 16, .textColor = isActiveChat ? (Clay_Color){255,255,255,255} : (Clay_Color){0,0,0,255} }
+        // FIXED: Added FONT_ID_BODY_16
+        { .fontId = FONT_ID_BODY_16, .fontSize = 16, .textColor = isActiveChat ? (Clay_Color){255,255,255,255} : (Clay_Color){0,0,0,255} }
     );
 }
 
 void LastMessage(bool isActiveChat) {
     CLAY_TEXT(
         CLAY_STRING("Typing dynamic layout rules..."),
-        { .fontSize = 13, .textColor = isActiveChat ? (Clay_Color){215,240,255,255} : (Clay_Color){140,140,145,255} }
+        // FIXED: Added FONT_ID_BODY_13
+        { .fontId = FONT_ID_BODY_13, .fontSize = 13, .textColor = isActiveChat ? (Clay_Color){215,240,255,255} : (Clay_Color){140,140,145,255} }
     );
 }
 
@@ -44,7 +47,6 @@ void Contact(int i, bool isActiveChat) {
             LastMessage(isActiveChat);
         }
     }
-
 }
 
 void ContactList(void) {
@@ -69,7 +71,8 @@ void Search(void) {
         },
         .backgroundColor = { 244, 244, 245, 255 }
     }) {
-        CLAY_TEXT(CLAY_STRING("Search conversations..."), { .fontSize = 15, .textColor = { 142, 142, 147, 255 } });
+        // FIXED: Added FONT_ID_BODY_15
+        CLAY_TEXT(CLAY_STRING("Search conversations..."), { .fontId = FONT_ID_BODY_15, .fontSize = 15, .textColor = { 142, 142, 147, 255 } });
     }
 }
 
@@ -79,7 +82,7 @@ void SideBar(void) {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
             .sizing = { .width = CLAY_SIZING_FIXED(320), .height = CLAY_SIZING_GROW(0) }
         },
-        .backgroundColor = { 255, 255, 255, 255 } // Pure white sidebar panel
+        .backgroundColor = { 255, 255, 255, 255 }
     }) {
         Search();
         ContactList();
