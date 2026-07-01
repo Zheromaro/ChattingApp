@@ -43,18 +43,7 @@ bool init_app(App *a) {
         return false;
     }
     SDL_SetRenderVSync(a->renderer, 1);
-
-    // window icon
-    const char *driver = SDL_GetCurrentVideoDriver();
-    if (!(driver && SDL_strcmp(driver, "wayland") == 0)) {
-        SDL_Surface *icon = IMG_Load("assets/appLogo.png");
-        if (icon == NULL)
-            fprintf(stderr, "Error loading window icon: %s\n", SDL_GetError());
-        if (!SDL_SetWindowIcon(a->window, icon))
-            fprintf(stderr, "Error setting window icon: %s\n", SDL_GetError());
-
-        SDL_DestroySurface(icon);
-    }
+    SDL_StartTextInput(a->window);
 
     // SDL_ttf
     if (!TTF_Init()) {
@@ -78,7 +67,7 @@ bool init_app(App *a) {
         a->fonts[i] = NULL;
     }
 
-    const char* fontPath = "assets/bit_font.ttf";
+    const char* fontPath = "assets/Ubuntu-Medium.ttf";
     a->fonts[FONT_ID_BODY_13] = TTF_OpenFont(fontPath, 13);
     a->fonts[FONT_ID_BODY_15] = TTF_OpenFont(fontPath, 15);
     a->fonts[FONT_ID_BODY_16] = TTF_OpenFont(fontPath, 16);
@@ -121,6 +110,7 @@ void free_app(App *a) {
         SDL_DestroyWindow(a->window);
         a->window = NULL;
     }
+    SDL_StopTextInput(a->window);
     UI_Free();
     TTF_Quit();
     SDL_Quit();

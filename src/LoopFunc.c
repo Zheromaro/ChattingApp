@@ -19,12 +19,11 @@ void Enter(bool* running) {
 }
 
 void Exit(void) {
-
+    ChatExit();
 }
 
 void Input(void) {
     while (SDL_PollEvent(&event)) {
-        UI_Input(&event);
         switch (event.type) {
             case SDL_EVENT_QUIT:
                 *prunning = false;
@@ -34,6 +33,8 @@ void Input(void) {
                     *prunning = false;
                 break;
         }
+        UI_Input(&event);
+        ChatInput(&event);
     }
 }
 

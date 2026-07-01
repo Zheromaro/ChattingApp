@@ -18,6 +18,7 @@ static float mouseY = 0.0f;
 static float scrollX = 0.0f;
 static float scrollY = 0.0f;
 static bool mouseDown = false;
+static bool debugMode = false;
 
 static void HandleClayErrors(Clay_ErrorData errorData) {
     fprintf(stderr, "Clay Error [%d]: %s\n", errorData.errorType, errorData.errorText.chars);
@@ -70,7 +71,6 @@ bool UI_Init(int width, int height, SDL_Renderer *renderer, TTF_TextEngine *text
     Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(SDL_max(CLAY_MEMORY_SIZE, clayMemSize), clayMemory);
 
     Clay_Initialize(arena, (Clay_Dimensions){ width, height }, (Clay_ErrorHandler){.errorHandlerFunction = HandleClayErrors});
-
     Clay_SetMeasureTextFunction(Clay_SDL3_MeasureText, &clayRenderer);
 
     return true;
@@ -89,6 +89,12 @@ void UI_Layout(Clay_RenderCommandArray command) {
 
 void UI_Input(SDL_Event* e) {
     switch (e->type) {
+        case SDL_EVENT_KEY_DOWN:
+            if (e->key.key == SDLK_P) {
+                debugMode = !debugMode;
+                Clay_SetDebugModeEnabled(debugMode);
+            }
+            break;
         case SDL_EVENT_MOUSE_MOTION:
             mouseX = e->motion.x;
             mouseY = e->motion.y;
