@@ -143,6 +143,7 @@ endif()
 # ==========================================================
 
 # Vcpkg packages
+find_package(cJSON CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
 find_package(SDL3_image CONFIG REQUIRED)
@@ -153,6 +154,7 @@ include(cmake/ExternalLib.cmake)
 if(NOT ${PROJECT_NAME}_BUILD_TYPE STREQUAL "header-only")
   set(LINK_LIBS
     ${EXTERNAL_LIBS}
+    cjson
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
     SDL3_image::SDL3_image

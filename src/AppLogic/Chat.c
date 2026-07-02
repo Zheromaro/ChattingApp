@@ -1,18 +1,32 @@
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "LoopLogic/UI.h"
 #include "AppLogic/Chat.h"
 #include "AppLogic/UI/SideBar.h"
 #include "AppLogic/UI/MainPanel.h"
-#include <SDL3/SDL_oldnames.h>
-#include <string.h>
-#include <wchar.h>
+#include "AppLogic/Entities/User.h"
+#include "AppLogic/Entities/MessageList.h"
 
-char* messageBuffer = '\0';
+char* messageBuffer = "";
 int messageBuffLen = 0;
 int addLen = 0;
 int oldLen = 0;
+MessageManager *mm = NULL;
+
+void ChatEnter(void) {
+    MMInit(mm);
+    MMAdd(mm, MSG_INCOMING, "hello !!!");
+    UserCreate("111", "zahradin", "http://nothing.com");
+    UserCreate("222", "zahrawi", "http://nothing.com");
+    UserCreate("333", "zhero", "http://nothing.com");
+    UserCreate("444", "zahro", "http://nothing.com");
+    UserCreate("555", "zohire", "http://nothing.com");
+}
+
+void ChatExit(void) {
+    MMFree(mm);
+    free(messageBuffer);
+}
 
 void ChatInput(SDL_Event* event) {
     switch (event->type) {
@@ -52,6 +66,6 @@ void ChatUpdate(float delta_time) {
     UI_Layout(renderCommands);
 }
 
-void ChatExit(void) {
-    free(messageBuffer);
+void ChatRender(SDL_Renderer *renderer) {
+    (void)renderer;
 }

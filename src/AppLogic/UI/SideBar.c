@@ -1,7 +1,8 @@
-#include <clay.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdio.h>
+#include <clay.h>
+#include "LoopLogic/Text.h"
 #include "AppLogic/UI/SideBar.h"
 #include "AppLogic/UI/CONST_UI.h"
 

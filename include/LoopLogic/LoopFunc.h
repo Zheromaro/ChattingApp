@@ -1,7 +1,8 @@
 #ifndef LOOPFUNC_H
 #define LOOPFUNC_H
 
-#include <SDL3/SDL.h>
+#include <stdbool.h>
+typedef struct SDL_Renderer SDL_Renderer;
 
 void Enter(bool* running);
 void Exit(void);

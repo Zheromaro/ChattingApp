@@ -1,4 +1,5 @@
 #include <clay.h>
+#include "LoopLogic/Text.h"
 #include "AppLogic/UI/MainPanel.h"
 #include "AppLogic/UI/CONST_UI.h"
 
