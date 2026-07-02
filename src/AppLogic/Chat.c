@@ -14,13 +14,6 @@ int oldLen = 0;
 MessageManager *mm = NULL;
 
 void ChatEnter(void) {
-    MMInit(mm);
-    MMAdd(mm, MSG_INCOMING, "hello !!!");
-    UserCreate("111", "zahradin", "http://nothing.com");
-    UserCreate("222", "zahrawi", "http://nothing.com");
-    UserCreate("333", "zhero", "http://nothing.com");
-    UserCreate("444", "zahro", "http://nothing.com");
-    UserCreate("555", "zohire", "http://nothing.com");
 }
 
 void ChatExit(void) {
