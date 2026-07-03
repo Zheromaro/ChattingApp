@@ -1,17 +1,17 @@
-#include "AppLogic/Entities/TextBox.h"
-#include "AppLogic/Healper/HStrings.h"
-#include <SDL3/SDL_keycode.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <SDL3/SDL.h>
+#include "AppLogic/Entities/TextBox.h"
+#include "AppLogic/Healper/HStrings.h"
 
 typedef struct {
-    char* utf8_char;   /* owned */
+    char* utf8_char;
     size_t utf8_len;
-} tb_char_t;
+} TextBuffer;
 
-struct text_buffer {
-    tb_char_t* chars;
+struct TextBox {
+    TextBuffer* chars;
     size_t char_count;
     size_t cursor_pos;
 
@@ -26,30 +26,16 @@ struct text_buffer {
     bool enter_pressed;
 };
 
-text_buffer_t* tb_create(void) {
-    text_buffer_t* tb = calloc(1, sizeof(text_buffer_t));
-    tb->cursor_blink_interval = 0.53f;
-    tb->cursor_visible = true;
-    return tb;
-}
-
-void tb_destroy(text_buffer_t* tb) {
-    if (!tb) return;
-    for (size_t i = 0; i < tb->char_count; i++) free(tb->chars[i].utf8_char);
-    free(tb->chars);
-    free(tb);
-}
-
-static void tb_reset_blink(text_buffer_t* tb) {
+static void TBResetBlink(TextBox* tb) {
     tb->cursor_visible = true;
     tb->cursor_blink_timer = 0.0f;
 }
 
-static void tb_clear_selection(text_buffer_t* tb) {
+static void TBClearSelection(TextBox* tb) {
     tb->sel_start = tb->sel_end = tb->sel_count = 0;
 }
 
-static void tb_select_all(text_buffer_t* tb) {
+static void TBSelectAll(TextBox* tb) {
     tb->sel_start = 0;
     tb->sel_end = tb->char_count;
     tb->sel_count = tb->char_count;
@@ -57,7 +43,7 @@ static void tb_select_all(text_buffer_t* tb) {
     tb->cursor_pos = tb->char_count;
 }
 
-static char* tb_get_selection_text(const text_buffer_t* tb) {
+static char* TBGetSelectionText(const TextBox* tb) {
     if (!tb->sel_count) return NULL;
     char* out = NULL;
     for (size_t i = tb->sel_start; i < tb->sel_end; i++)
@@ -65,7 +51,7 @@ static char* tb_get_selection_text(const text_buffer_t* tb) {
     return out;
 }
 
-static void tb_delete_selection(text_buffer_t* tb) {
+static void TBSeleteSelection(TextBox* tb) {
     if (!tb->sel_count) return;
     size_t new_count = tb->char_count - tb->sel_count;
     size_t dst = tb->sel_start;
@@ -75,17 +61,17 @@ static void tb_delete_selection(text_buffer_t* tb) {
     for (size_t i = new_count; i < tb->char_count; i++) free(tb->chars[i].utf8_char);
     tb->char_count = new_count;
     tb->cursor_pos = tb->sel_start;
-    tb_clear_selection(tb);
+    TBClearSelection(tb);
     if (!new_count) {
         free(tb->chars);
         tb->chars = NULL;
     } else {
-        tb_char_t* tmp = realloc(tb->chars, new_count * sizeof(tb_char_t));
+        TextBuffer* tmp = realloc(tb->chars, new_count * sizeof(TextBuffer));
         if (tmp) tb->chars = tmp;
     }
 }
 
-static void tb_backspace(text_buffer_t* tb) {
+static void TBBackspace(TextBox* tb) {
     if (!tb->char_count || !tb->cursor_pos) return;
     size_t idx = tb->cursor_pos - 1;
     free(tb->chars[idx].utf8_char);
@@ -97,12 +83,12 @@ static void tb_backspace(text_buffer_t* tb) {
         free(tb->chars);
         tb->chars = NULL;
     } else {
-        tb_char_t* tmp = realloc(tb->chars, tb->char_count * sizeof(tb_char_t));
+        TextBuffer* tmp = realloc(tb->chars, tb->char_count * sizeof(TextBuffer));
         if (tmp) tb->chars = tmp;
     }
 }
 
-static void tb_delete_at(text_buffer_t* tb, size_t pos) {
+static void TBDeleteAt(TextBox* tb, size_t pos) {
     if (pos >= tb->char_count) return;
     free(tb->chars[pos].utf8_char);
     for (size_t i = pos; i + 1 < tb->char_count; i++)
@@ -112,14 +98,14 @@ static void tb_delete_at(text_buffer_t* tb, size_t pos) {
         free(tb->chars);
         tb->chars = NULL;
     } else {
-        tb_char_t* tmp = realloc(tb->chars, tb->char_count * sizeof(tb_char_t));
+        TextBuffer* tmp = realloc(tb->chars, tb->char_count * sizeof(TextBuffer));
         if (tmp) tb->chars = tmp;
     }
 }
 
-static void tb_insert_char(text_buffer_t* tb, char* ch) {
+static void TBInsertChar(TextBox* tb, char* ch) {
     size_t new_count = tb->char_count + 1;
-    tb_char_t* tmp = realloc(tb->chars, new_count * sizeof(tb_char_t));
+    TextBuffer* tmp = realloc(tb->chars, new_count * sizeof(TextBuffer));
     if (!tmp) { free(ch); return; }
     tb->chars = tmp;
     for (size_t i = new_count - 1; i > tb->cursor_pos; i--)
@@ -130,13 +116,13 @@ static void tb_insert_char(text_buffer_t* tb, char* ch) {
     tb->char_count = new_count;
 }
 
-static void tb_add_selection_left(text_buffer_t* tb) {
+static void TBAddSelectionLeft(TextBox* tb) {
     if (!tb->cursor_pos) return;
     if (tb->sel_direction == 1 && tb->sel_count) {
         tb->cursor_pos--;
         tb->sel_end--;
         tb->sel_count--;
-        if (!tb->sel_count) tb_clear_selection(tb);
+        if (!tb->sel_count) TBClearSelection(tb);
         return;
     }
     tb->sel_direction = 0;
@@ -146,13 +132,13 @@ static void tb_add_selection_left(text_buffer_t* tb) {
     tb->sel_count++;
 }
 
-static void tb_add_selection_right(text_buffer_t* tb) {
+static void TBAddSelectionRight(TextBox* tb) {
     if (tb->cursor_pos >= tb->char_count) return;
     if (tb->sel_direction == 0 && tb->sel_count) {
         tb->cursor_pos++;
         tb->sel_start++;
         tb->sel_count--;
-        if (!tb->sel_count) tb_clear_selection(tb);
+        if (!tb->sel_count) TBClearSelection(tb);
         return;
     }
     tb->sel_direction = 1;
@@ -166,7 +152,21 @@ static void tb_add_selection_right(text_buffer_t* tb) {
 /* Public API                                                         */
 /* ------------------------------------------------------------------ */
 
-void tb_update(text_buffer_t* tb, float delta_time) {
+TextBox* TBCreate(void) {
+    TextBox* tb = calloc(1, sizeof(TextBox));
+    tb->cursor_blink_interval = 0.53f;
+    tb->cursor_visible = true;
+    return tb;
+}
+
+void TBDestroy(TextBox* tb) {
+    if (!tb) return;
+    for (size_t i = 0; i < tb->char_count; i++) free(tb->chars[i].utf8_char);
+    free(tb->chars);
+    free(tb);
+}
+
+void TBUpdate(TextBox* tb, float delta_time) {
     if (!tb) return;
     tb->cursor_blink_timer += delta_time;
     if (tb->cursor_blink_timer >= tb->cursor_blink_interval) {
@@ -175,20 +175,20 @@ void tb_update(text_buffer_t* tb, float delta_time) {
     }
 }
 
-bool tb_handle_event(text_buffer_t* tb, const SDL_Event* ev) {
+bool TBHandleEvent(TextBox* tb, const SDL_Event* ev) {
     if (!tb || !ev) return false;
 
     switch (ev->type) {
     case SDL_EVENT_TEXT_INPUT: {
-        tb_delete_selection(tb);
+        TBSeleteSelection(tb);
         size_t len = strlen(ev->text.text);
         size_t idx = 0;
         while (idx < len) {
             char* ch = string_getutf8char(ev->text.text, &idx, len);
-            if (ch) tb_insert_char(tb, ch);
+            if (ch) TBInsertChar(tb, ch);
             idx++;
         }
-        tb_reset_blink(tb);
+        TBResetBlink(tb);
         return true;
     }
 
@@ -200,11 +200,11 @@ bool tb_handle_event(text_buffer_t* tb, const SDL_Event* ev) {
         if (ctrl) {
             switch (key) {
             case SDLK_A:
-                tb_select_all(tb);
-                tb_reset_blink(tb);
+                TBSelectAll(tb);
+                TBResetBlink(tb);
                 return true;
             case SDLK_C: {
-                char* sel = tb_get_selection_text(tb);
+                char* sel = TBGetSelectionText(tb);
                 if (sel) SDL_SetClipboardText(sel);
                 free(sel);
                 return true;
@@ -212,17 +212,17 @@ bool tb_handle_event(text_buffer_t* tb, const SDL_Event* ev) {
             case SDLK_V: {
                 char* clip = SDL_GetClipboardText();
                 if (clip) {
-                    tb_delete_selection(tb);
+                    TBSeleteSelection(tb);
                     size_t len = strlen(clip);
                     size_t idx = 0;
                     while (idx < len) {
                         char* ch = string_getutf8char(clip, &idx, len);
-                        if (ch) tb_insert_char(tb, ch);
+                        if (ch) TBInsertChar(tb, ch);
                         idx++;
                     }
                     SDL_free(clip);
                 }
-                tb_reset_blink(tb);
+                TBResetBlink(tb);
                 return true;
             }
             }
@@ -230,8 +230,8 @@ bool tb_handle_event(text_buffer_t* tb, const SDL_Event* ev) {
 
         if (shift) {
             switch (key) {
-            case SDLK_LEFT:  tb_add_selection_left(tb);  tb_reset_blink(tb); return true;
-            case SDLK_RIGHT: tb_add_selection_right(tb); tb_reset_blink(tb); return true;
+            case SDLK_LEFT:  TBAddSelectionLeft(tb);  TBResetBlink(tb); return true;
+            case SDLK_RIGHT: TBAddSelectionRight(tb); TBResetBlink(tb); return true;
             }
         }
 
@@ -239,33 +239,33 @@ bool tb_handle_event(text_buffer_t* tb, const SDL_Event* ev) {
         case SDLK_LEFT:
             if (tb->sel_count) {
                 tb->cursor_pos = tb->sel_start;
-                tb_clear_selection(tb);
+                TBClearSelection(tb);
             } else if (tb->cursor_pos > 0) {
                 tb->cursor_pos--;
             }
-            tb_reset_blink(tb);
+            TBResetBlink(tb);
             return true;
 
         case SDLK_RIGHT:
             if (tb->sel_count) {
                 tb->cursor_pos = tb->sel_end;
-                tb_clear_selection(tb);
+                TBClearSelection(tb);
             } else if (tb->cursor_pos < tb->char_count) {
                 tb->cursor_pos++;
             }
-            tb_reset_blink(tb);
+            TBResetBlink(tb);
             return true;
 
         case SDLK_BACKSPACE:
-            if (tb->sel_count) tb_delete_selection(tb);
-            else tb_backspace(tb);
-            tb_reset_blink(tb);
+            if (tb->sel_count) TBSeleteSelection(tb);
+            else TBBackspace(tb);
+            TBResetBlink(tb);
             return true;
 
         case SDLK_DELETE:
-            if (tb->sel_count) tb_delete_selection(tb);
-            else tb_delete_at(tb, tb->cursor_pos);
-            tb_reset_blink(tb);
+            if (tb->sel_count) TBSeleteSelection(tb);
+            else TBDeleteAt(tb, tb->cursor_pos);
+            TBResetBlink(tb);
             return true;
 
         case SDLK_RETURN:
@@ -284,7 +284,7 @@ bool tb_handle_event(text_buffer_t* tb, const SDL_Event* ev) {
     return false;
 }
 
-const char* tb_get_text(const text_buffer_t* tb) {
+const char* TBGetText(const TextBox* tb) {
     if (!tb || !tb->char_count) return "";
     static char* cache = NULL;
     free(cache);
@@ -294,42 +294,42 @@ const char* tb_get_text(const text_buffer_t* tb) {
     return cache ? cache : "";
 }
 
-void tb_clear(text_buffer_t* tb) {
+void TBClear(TextBox* tb) {
     if (!tb) return;
     for (size_t i = 0; i < tb->char_count; i++) free(tb->chars[i].utf8_char);
     free(tb->chars);
     tb->chars = NULL;
     tb->char_count = 0;
     tb->cursor_pos = 0;
-    tb_clear_selection(tb);
+    TBClearSelection(tb);
     tb->enter_pressed = false;
-    tb_reset_blink(tb);
+    TBResetBlink(tb);
 }
 
-size_t tb_get_cursor_pos(const text_buffer_t* tb) {
+size_t TBGetCursorPos(const TextBox* tb) {
     return tb ? tb->cursor_pos : 0;
 }
 
-bool tb_has_selection(const text_buffer_t* tb) {
+bool TBHasSelection(const TextBox* tb) {
     return tb && tb->sel_count > 0;
 }
 
-size_t tb_get_selection_start(const text_buffer_t* tb) {
+size_t TBGetSelectionStart(const TextBox* tb) {
     return tb ? tb->sel_start : 0;
 }
 
-size_t tb_get_selection_end(const text_buffer_t* tb) {
+size_t TBGetSelectionEnd(const TextBox* tb) {
     return tb ? tb->sel_end : 0;
 }
 
-bool tb_should_send(text_buffer_t* tb) {
+bool TBShouldSend(TextBox* tb) {
     if (!tb) return false;
     bool v = tb->enter_pressed;
     tb->enter_pressed = false;
     return v;
 }
 
-int tb_measure_width(const text_buffer_t* tb, int font_id, size_t up_to_index) {
+int TBMeasureWidth(const TextBox* tb, int font_id, size_t up_to_index) {
     (void)font_id; /* if you need to measure via TTF, do it in MainPanel_RenderExtras */
     if (!tb || !up_to_index) return 0;
     int w = 0;

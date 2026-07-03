@@ -8,8 +8,9 @@ extern "C" {
 typedef struct Message Message;
 
 Message* MessageCreate(const char* author_id, const char* conversation_id, const char* text);
-char* MessageGetID(const Message* msg);
-char* MessageGetText(const Message* msg);
+const char* MessageGetID(const Message* msg);
+const char* MessageGetAuthorID(const Message* msg);
+const char* MessageGetText(const Message* msg);
 void MessageDestroy(Message* msg);
 
 #ifdef __cplusplus

@@ -1,6 +1,13 @@
-#include "AppLogic/Entities/User.h"
 #include <stdlib.h>
 #include <string.h>
+#include "AppLogic/Entities/User.h"
+#include "AppLogic/ID.h"
+
+
+typedef struct User {
+    char* id;
+    char* display_name;
+} User;
 
 static char* str_dup(const char* s) {
     if (!s) return NULL;
@@ -10,30 +17,31 @@ static char* str_dup(const char* s) {
     return d;
 }
 
-User* UserCreate(const char* id, const char* display_name, const char* avatar_url) {
+User* UserCreate(const char* display_name) {
     User* user = calloc(1, sizeof(User));
     if (!user) return NULL;
 
-    user->id           = str_dup(id);
+    user->id           = GenerateIDString();
     user->display_name = str_dup(display_name);
-    user->avatar_url   = str_dup(avatar_url);
 
-    if ((id && !user->id) || (display_name && !user->display_name)) {
+    if ((!user->id) || (display_name && !user->display_name)) {
         UserDestroy(user);
         return NULL;
     }
     return user;
 }
 
-User* UserClone(const User* other) {
-    if (!other) return NULL;
-    return UserCreate(other->id, other->display_name, other->avatar_url);
-}
-
 void UserDestroy(User* user) {
     if (!user) return;
     free(user->id);
     free(user->display_name);
-    free(user->avatar_url);
     free(user);
+}
+
+const char* UserGetID(const User* user) {
+    return user ? user->id : NULL;
+}
+
+const char* UserGetName(const User* user) {
+    return user ? user->display_name : NULL;
 }

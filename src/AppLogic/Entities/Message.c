@@ -1,8 +1,8 @@
-#include "AppLogic/Entities/Message.h"
-#include "AppLogic/ID.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "AppLogic/Entities/Message.h"
+#include "AppLogic/ID.h"
 
 typedef struct Message {
     char* id;
@@ -26,15 +26,16 @@ Message* MessageCreate(const char* author_id, const char* conversation_id, const
     if (!msg) return NULL;
 
     time_t now = time(NULL);
-    struct tm *time = gmtime(&now);
+    struct tm *tm_ptr = gmtime(&now);
+    if (!tm_ptr) { MessageDestroy(msg); return NULL; }
 
     msg->id            = GenerateIDString();
     msg->author_id     = str_dup(author_id);
     msg->conversation_id = str_dup(conversation_id);
     msg->text          = str_dup(text);
-    msg->timestamp     = *time;
+    msg->timestamp     = *tm_ptr;
 
-    if ((conversation_id && !msg->conversation_id) ||
+    if (!msg->id ||(conversation_id && !msg->conversation_id) ||
         (author_id && !msg->author_id) || (text && !msg->text)) {
         MessageDestroy(msg);
         return NULL;
@@ -42,11 +43,15 @@ Message* MessageCreate(const char* author_id, const char* conversation_id, const
     return msg;
 }
 
-char* MessageGetID(const Message* msg) {
+const char* MessageGetID(const Message* msg) {
     return msg->id;
 }
 
-char* MessageGetText(const Message* msg) {
+const char* MessageGetAuthorID(const Message* msg) {
+    return msg->author_id;
+}
+
+const char* MessageGetText(const Message* msg) {
     return msg->text;
 }
 

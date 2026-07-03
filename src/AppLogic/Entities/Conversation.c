@@ -1,14 +1,17 @@
-#include "AppLogic/Entities/Conversation.h"
 #include <stdlib.h>
 #include <string.h>
+#include "AppLogic/Entities/Conversation.h"
+#include "AppLogic/ID.h"
 
-static char* str_dup(const char* s) {
-    if (!s) return NULL;
-    size_t n = strlen(s) + 1;
-    char* d = malloc(n);
-    if (d) memcpy(d, s, n);
-    return d;
-}
+struct Conversation {
+    char* id;
+    User** participants;
+    size_t participant_count;
+    size_t participant_capacity;
+    Message** messages;
+    size_t message_count;
+    size_t message_capacity;
+};
 
 static bool grow_array(void** arr, size_t* capacity, size_t count, size_t item_size) {
     if (count < *capacity) return true;
@@ -20,18 +23,18 @@ static bool grow_array(void** arr, size_t* capacity, size_t count, size_t item_s
     return true;
 }
 
-Conversation* conversation_create(const char* id) {
+Conversation* ConvCreate(void) {
     Conversation* conv = calloc(1, sizeof(Conversation));
     if (!conv) return NULL;
-    conv->id = str_dup(id);
-    if (id && !conv->id) {
+    conv->id = GenerateIDString();
+    if (!conv->id) {
         free(conv);
         return NULL;
     }
     return conv;
 }
 
-void conversation_destroy(Conversation* conv) {
+void ConvDestroy(Conversation* conv) {
     if (!conv) return;
     for (size_t i = 0; i < conv->participant_count; i++) UserDestroy(conv->participants[i]);
     free(conv->participants);
@@ -41,7 +44,7 @@ void conversation_destroy(Conversation* conv) {
     free(conv);
 }
 
-bool conversation_add_participant(Conversation* conv, User* user) {
+bool ConvAddParticipant(Conversation* conv, User* user) {
     if (!conv || !user) return false;
     if (!grow_array((void**)&conv->participants, &conv->participant_capacity,
                     conv->participant_count, sizeof(User*))) {
@@ -51,7 +54,7 @@ bool conversation_add_participant(Conversation* conv, User* user) {
     return true;
 }
 
-bool conversation_add_message(Conversation* conv, Message* msg) {
+bool ConvAddMessage(Conversation* conv, Message* msg) {
     if (!conv || !msg) return false;
     if (!grow_array((void**)&conv->messages, &conv->message_capacity,
                     conv->message_count, sizeof(Message*))) {
@@ -61,20 +64,15 @@ bool conversation_add_message(Conversation* conv, Message* msg) {
     return true;
 }
 
-const Message* conversation_find_message(const Conversation* conv, const char* msg_id) {
-    if (!conv || !msg_id) return NULL;
-    for (size_t i = 0; i < conv->message_count; i++) {
-        //if (conv->messages[i]->id && strcmp(conv->messages[i]->id, msg_id) == 0)
-        //    return conv->messages[i];
+const User* ConvFindParticipant(const Conversation* conv, const char* user_id) {
+    if (!conv || !user_id) return NULL;
+    for (size_t i = 0; i < conv->participant_count; i++) {
+        if (strcmp(UserGetID(conv->participants[i]), user_id) == 0)
+            return conv->participants[i];
     }
     return NULL;
 }
 
-const User* conversation_find_participant(const Conversation* conv, const char* user_id) {
-    if (!conv || !user_id) return NULL;
-    for (size_t i = 0; i < conv->participant_count; i++) {
-        if (conv->participants[i]->id && strcmp(conv->participants[i]->id, user_id) == 0)
-            return conv->participants[i];
-    }
-    return NULL;
+const char* ConvGetID(const Conversation* conv) {
+    return conv ? conv->id : NULL;
 }
