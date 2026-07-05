@@ -23,7 +23,6 @@ struct TextBox {
     float cursor_blink_timer;
     float cursor_blink_interval;
     bool cursor_visible;
-    bool enter_pressed;
 };
 
 static void TBResetBlink(TextBox* tb) {
@@ -51,17 +50,24 @@ static char* TBGetSelectionText(const TextBox* tb) {
     return out;
 }
 
-static void TBSeleteSelection(TextBox* tb) {
+static void TBDeleteSelection(TextBox* tb) {
     if (!tb->sel_count) return;
+    /* 1. Free the strings that are actually being deleted */
+    for (size_t i = tb->sel_start; i < tb->sel_end; i++) free(tb->chars[i].utf8_char);
+
+    /* 2. Shift the remaining TextBuffer structs down */
     size_t new_count = tb->char_count - tb->sel_count;
     size_t dst = tb->sel_start;
     for (size_t i = tb->sel_end; i < tb->char_count; i++) {
         tb->chars[dst++] = tb->chars[i];
     }
-    for (size_t i = new_count; i < tb->char_count; i++) free(tb->chars[i].utf8_char);
+
+    /* 3. Update metadata */
     tb->char_count = new_count;
     tb->cursor_pos = tb->sel_start;
     TBClearSelection(tb);
+
+    /* 4. Shrink or free the array */
     if (!new_count) {
         free(tb->chars);
         tb->chars = NULL;
@@ -180,7 +186,7 @@ bool TBHandleEvent(TextBox* tb, const SDL_Event* ev) {
 
     switch (ev->type) {
     case SDL_EVENT_TEXT_INPUT: {
-        TBSeleteSelection(tb);
+        TBDeleteSelection(tb);
         size_t len = strlen(ev->text.text);
         size_t idx = 0;
         while (idx < len) {
@@ -212,7 +218,7 @@ bool TBHandleEvent(TextBox* tb, const SDL_Event* ev) {
             case SDLK_V: {
                 char* clip = SDL_GetClipboardText();
                 if (clip) {
-                    TBSeleteSelection(tb);
+                    TBDeleteSelection(tb);
                     size_t len = strlen(clip);
                     size_t idx = 0;
                     while (idx < len) {
@@ -257,40 +263,31 @@ bool TBHandleEvent(TextBox* tb, const SDL_Event* ev) {
             return true;
 
         case SDLK_BACKSPACE:
-            if (tb->sel_count) TBSeleteSelection(tb);
+            if (tb->sel_count) TBDeleteSelection(tb);
             else TBBackspace(tb);
             TBResetBlink(tb);
             return true;
 
         case SDLK_DELETE:
-            if (tb->sel_count) TBSeleteSelection(tb);
+            if (tb->sel_count) TBDeleteSelection(tb);
             else TBDeleteAt(tb, tb->cursor_pos);
             TBResetBlink(tb);
-            return true;
-
-        case SDLK_RETURN:
-        case SDLK_KP_ENTER:
-            tb->enter_pressed = true;
             return true;
         }
         break;
     }
-
-    case SDL_EVENT_KEY_UP:
-        if (ev->key.key == SDLK_RETURN || ev->key.key == SDLK_KP_ENTER)
-            tb->enter_pressed = true;
-        break;
     }
     return false;
 }
 
-const char* TBGetText(const TextBox* tb) {
+const char* TBTakeText(TextBox* tb) {
     if (!tb || !tb->char_count) return "";
     static char* cache = NULL;
     free(cache);
     cache = NULL;
     for (size_t i = 0; i < tb->char_count; i++)
         string_concatstr(&cache, tb->chars[i].utf8_char);
+    TBClear(tb);
     return cache ? cache : "";
 }
 
@@ -302,38 +299,35 @@ void TBClear(TextBox* tb) {
     tb->char_count = 0;
     tb->cursor_pos = 0;
     TBClearSelection(tb);
-    tb->enter_pressed = false;
     TBResetBlink(tb);
 }
 
-size_t TBGetCursorPos(const TextBox* tb) {
-    return tb ? tb->cursor_pos : 0;
+char* TBGetText(TextBox* tb) {
+    if (!tb || !tb->char_count) return "";
+    static char* cache = NULL;
+    free(cache);
+    cache = NULL;
+    for (size_t i = 0; i < tb->char_count; i++)
+        string_concatstr(&cache, tb->chars[i].utf8_char);
+    return cache ? cache : "";
 }
 
-bool TBHasSelection(const TextBox* tb) {
-    return tb && tb->sel_count > 0;
+size_t TBGetByteOffset(const TextBox* tb, size_t char_index) {
+    if (!tb) return 0;
+    size_t off = 0;
+    for (size_t i = 0; i < char_index && i < tb->char_count; i++)
+        off += tb->chars[i].utf8_len;
+    return off;
 }
 
-size_t TBGetSelectionStart(const TextBox* tb) {
-    return tb ? tb->sel_start : 0;
-}
+size_t TBGetCursorPos(const TextBox* tb) { return tb ? tb->cursor_pos : 0; }
 
-size_t TBGetSelectionEnd(const TextBox* tb) {
-    return tb ? tb->sel_end : 0;
-}
+bool TBHasSelection(const TextBox* tb) { return tb && tb->sel_count > 0; }
 
-bool TBShouldSend(TextBox* tb) {
-    if (!tb) return false;
-    bool v = tb->enter_pressed;
-    tb->enter_pressed = false;
-    return v;
-}
+size_t TBGetSelectionStart(const TextBox* tb) { return tb ? tb->sel_start : 0; }
 
-int TBMeasureWidth(const TextBox* tb, int font_id, size_t up_to_index) {
-    (void)font_id; /* if you need to measure via TTF, do it in MainPanel_RenderExtras */
-    if (!tb || !up_to_index) return 0;
-    int w = 0;
-    for (size_t i = 0; i < up_to_index && i < tb->char_count; i++)
-        w += (int)tb->chars[i].utf8_len * 8; /* fallback rough width */
-    return w;
-}
+size_t TBGetSelectionEnd(const TextBox* tb) { return tb ? tb->sel_end : 0; }
+
+size_t TBGetCharCount(const TextBox* tb) { return tb ? tb->char_count : 0; }
+
+bool   TBIsCursorVisible(const TextBox* tb) { return tb ? tb->cursor_visible : false; }

@@ -1,47 +1,44 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "AppLogic/Entities/Message.h"
 #include "LoopLogic/UI.h"
 #include "AppLogic/Chat.h"
 #include "AppLogic/UI/SideBar.h"
 #include "AppLogic/UI/MainPanel.h"
-#include "AppLogic/Entities/User.h"
-#include "AppLogic/Entities/MessageList.h"
+#include "AppLogic/Entities/TextBox.h"
+#include <stdio.h>
 
-char* messageBuffer = "";
-int messageBuffLen = 0;
-int addLen = 0;
-int oldLen = 0;
-MessageManager *mm = NULL;
+TextBox *tb = NULL;
+Message* msg;
 
 void ChatEnter(void) {
+    tb = TBCreate();
 }
 
 void ChatExit(void) {
-    MMFree(mm);
-    free(messageBuffer);
+    TBDestroy(tb);
 }
 
 void ChatInput(SDL_Event* event) {
+    if (TBHandleEvent(tb, event)) {
+    }
+
     switch (event->type) {
-        case SDL_EVENT_TEXT_INPUT:
-            addLen = strlen(event->text.text);
-            oldLen = messageBuffLen;
-            messageBuffLen += addLen;
-
-            char* newMessage = realloc(messageBuffer, messageBuffLen + 1); // +1 for '\0'
-            if (newMessage == NULL) {
-                fprintf(stderr, "Error: Failed realloc for text input\n");
-                break;
+        case SDL_EVENT_KEY_DOWN:
+            switch (event->key.key) {
+                case SDLK_RETURN:
+                case SDLK_KP_ENTER:
+                    const char* messageBuffer = TBTakeText(tb);
+                    if (messageBuffer[0] != '\0') {
+                        msg = MessageCreate("me", "us", messageBuffer);
+                    }
+                    printf("%s\n", MessageGetText(msg));
+                    break;
             }
-
-            strcpy(newMessage + oldLen, event->text.text); // append at OLD length
-            newMessage[messageBuffLen] = '\0';
-            messageBuffer = newMessage;
             break;
     }
 }
 
 void ChatUpdate(float delta_time) {
+    TBUpdate(tb, delta_time);
     Clay_BeginLayout();
 
     CLAY(CLAY_ID("OuterContainer"), {
@@ -52,7 +49,7 @@ void ChatUpdate(float delta_time) {
         .backgroundColor = { 231, 235, 240, 255 }
     }) {
         SideBar();
-        MainPanel(messageBuffer);
+        MainPanel(tb);
     }
 
     Clay_RenderCommandArray renderCommands = Clay_EndLayout(delta_time);

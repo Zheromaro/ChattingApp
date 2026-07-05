@@ -78,8 +78,7 @@ bool string_concatstr(char** dest_string, const char* src_string) {
         return false;
     }
 
-    size_t dest_stringlen = (*dest_string) ? strlen((*dest_string)) :
-            0;
+    size_t dest_stringlen = (*dest_string) ? strlen((*dest_string)) : 0;
     size_t src_stringlen = strlen(src_string);
     size_t new_strlen = dest_stringlen + src_stringlen;
     char* new_str = realloc((*dest_string), new_strlen + 1);

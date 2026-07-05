@@ -1,6 +1,8 @@
 #ifndef MAIN_PANEL_H
 #define MAIN_PANEL_H
 
-void MainPanel(char* messageBuffer);
+typedef struct TextBox TextBox ;
+
+void MainPanel(TextBox* tb);
 
 #endif

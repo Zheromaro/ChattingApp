@@ -90,7 +90,8 @@ void UI_Layout(Clay_RenderCommandArray command) {
 void UI_Input(SDL_Event* e) {
     switch (e->type) {
         case SDL_EVENT_KEY_DOWN:
-            if (e->key.key == SDLK_P) {
+            bool ctrl  = (SDL_GetModState() & SDL_KMOD_CTRL);
+            if (e->key.key == SDLK_P && ctrl) {
                 debugMode = !debugMode;
                 Clay_SetDebugModeEnabled(debugMode);
             }

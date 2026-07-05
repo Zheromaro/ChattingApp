@@ -81,7 +81,7 @@ clean: ## Clean build artifacts but preserve vcpkg toolchain
 	fi
 
 clean_all: ## Clean the entire build directory (including vcpkg)
-	rm -rf build/ .zed/
+	rm -rf build/ .zed/compile_commands.json
 
 # ==========================================================
 # 🏗️ Build Modes
