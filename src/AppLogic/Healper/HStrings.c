@@ -59,32 +59,23 @@ char* string_getutf8char(const char* utf8_string, size_t* index, size_t utf8_str
     return utf8_char;
 }
 
-char* string_dupstr(const char* string) {
-    if(!string) {
-        return NULL;
-    }
-    size_t string_len = strlen(string);
-    char* new_str = malloc(string_len+1);
-    if(!new_str) {
-        return NULL;
-    }
-    strcpy(new_str, string);
-    new_str[string_len] = '\0';
-    return new_str;
+char* string_dup(const char* string) {
+    if (string == NULL) return NULL;
+    size_t len = strlen(string) + 1;
+    char* dubstr = malloc(len);
+    if (dubstr) memcpy(dubstr, string, len);
+    return dubstr;
 }
 
 bool string_concatstr(char** dest_string, const char* src_string) {
-    if(!src_string) {
-        return false;
-    }
+    if(src_string == NULL) return false;
 
     size_t dest_stringlen = (*dest_string) ? strlen((*dest_string)) : 0;
     size_t src_stringlen = strlen(src_string);
     size_t new_strlen = dest_stringlen + src_stringlen;
     char* new_str = realloc((*dest_string), new_strlen + 1);
-    if(!new_str) {
-        return false;
-    }
+
+    if(!new_str) return false;
     strcpy(new_str+dest_stringlen, src_string);
     new_str[new_strlen] = '\0';
     *dest_string = new_str;

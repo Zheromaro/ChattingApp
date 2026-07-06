@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "AppLogic/Entities/Conversation.h"
+#include "AppLogic/Entities/Message.h"
+#include "AppLogic/Entities/User.h"
 #include "AppLogic/ID.h"
 
 struct Conversation {
@@ -75,4 +77,13 @@ const User* ConvFindParticipant(const Conversation* conv, const char* user_id) {
 
 const char* ConvGetID(const Conversation* conv) {
     return conv ? conv->id : NULL;
+}
+
+size_t ConvGetMessageCount(const Conversation* conv) {
+    return conv ? conv->message_count : 0;
+}
+
+const Message* ConvGetMessage(const Conversation* conv, size_t index) {
+    if (!conv || index >= conv->message_count) return NULL;
+    return conv->messages[index];
 }

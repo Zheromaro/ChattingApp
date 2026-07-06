@@ -1,20 +1,29 @@
-#include "AppLogic/Entities/Message.h"
 #include "LoopLogic/UI.h"
 #include "AppLogic/Chat.h"
 #include "AppLogic/UI/SideBar.h"
 #include "AppLogic/UI/MainPanel.h"
 #include "AppLogic/Entities/TextBox.h"
+#include "AppLogic/Entities/Message.h"
+#include "AppLogic/Entities/User.h"
+#include "AppLogic/Entities/Conversation.h"
 #include <stdio.h>
 
 TextBox *tb = NULL;
 Message* msg;
+User* me;
+Conversation* conv;
 
 void ChatEnter(void) {
     tb = TBCreate();
+    me = UserCreate("zahrawi");
+    conv = ConvCreate();
+    ConvAddParticipant(conv, me);
 }
 
 void ChatExit(void) {
     TBDestroy(tb);
+    UserDestroy(me);
+    ConvDestroy(conv);
 }
 
 void ChatInput(SDL_Event* event) {
@@ -27,10 +36,10 @@ void ChatInput(SDL_Event* event) {
                 case SDLK_RETURN:
                 case SDLK_KP_ENTER:
                     const char* messageBuffer = TBTakeText(tb);
-                    if (messageBuffer[0] != '\0') {
-                        msg = MessageCreate("me", "us", messageBuffer);
-                    }
-                    printf("%s\n", MessageGetText(msg));
+                    if (messageBuffer[0] == '\0') break;
+
+                    msg = MessageCreate(UserGetID(me), ConvGetID(conv), messageBuffer);
+                    ConvAddMessage(conv, msg);
                     break;
             }
             break;
@@ -49,7 +58,7 @@ void ChatUpdate(float delta_time) {
         .backgroundColor = { 231, 235, 240, 255 }
     }) {
         SideBar();
-        MainPanel(tb);
+        MainPanel(tb, conv, me);
     }
 
     Clay_RenderCommandArray renderCommands = Clay_EndLayout(delta_time);
