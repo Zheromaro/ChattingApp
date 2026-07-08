@@ -1,8 +1,8 @@
 #include <SDL3/SDL.h>
 #include <stdbool.h>
-#include "LoopLogic/LoopFunc.h"
-#include "LoopLogic/UI.h"
-#include "AppLogic/Chat.h"
+#include "Core/LoopFunc.h"
+#include "Core/UI.h"
+#include "Controller/Chat.h"
 
 
 static Uint64 last_tick = 0;

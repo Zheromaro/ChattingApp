@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <SDL3/SDL.h>
-#include "AppLogic/Entities/TextBox.h"
-#include "AppLogic/Healper/HStrings.h"
+#include "UI/TextBox.h"
+#include "Helper/HStrings.h"
 
 typedef struct {
     char* utf8_char;

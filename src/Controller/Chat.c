@@ -1,11 +1,11 @@
-#include "LoopLogic/UI.h"
-#include "AppLogic/Chat.h"
-#include "AppLogic/UI/SideBar.h"
-#include "AppLogic/UI/MainPanel.h"
-#include "AppLogic/Entities/TextBox.h"
-#include "AppLogic/Entities/Message.h"
-#include "AppLogic/Entities/User.h"
-#include "AppLogic/Entities/Conversation.h"
+#include "Core/UI.h"
+#include "Controller/Chat.h"
+#include "UI/SideBar.h"
+#include "UI/MainPanel.h"
+#include "UI/TextBox.h"
+#include "Model/Message.h"
+#include "Model/User.h"
+#include "Model/Conversation.h"
 #include <stdio.h>
 
 TextBox *tb = NULL;

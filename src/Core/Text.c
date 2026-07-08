@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include "LoopLogic/Text.h"
+#include "Core/Text.h"
 
 static TTF_TextEngine *textEngine;
 static TTF_Font **fonts;

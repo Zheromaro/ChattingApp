@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <time.h>
-#include "AppLogic/Entities/Message.h"
-#include "AppLogic/Healper/HStrings.h"
-#include "AppLogic/ID.h"
+#include "Model/Message.h"
+#include "Helper/HStrings.h"
+#include "Helper/ID.h"
 
 typedef struct Message {
     char* id;

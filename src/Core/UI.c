@@ -1,7 +1,7 @@
 #define CLAY_IMPLEMENTATION
 #include <stdlib.h>
 #include <stdio.h>
-#include "LoopLogic/UI.h"
+#include "Core/UI.h"
 #include <clay_renderer_SDL3.c>
 
 #define CLAY_MEMORY_SIZE 1024 * 1024  // 1MB for Clay arena

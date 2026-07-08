@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
-#include "AppLogic/Entities/User.h"
-#include "AppLogic/ID.h"
+#include "Model/User.h"
+#include "Helper/ID.h"
 
 
 typedef struct User {

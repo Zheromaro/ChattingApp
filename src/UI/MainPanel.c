@@ -1,14 +1,14 @@
 #include <clay.h>
 #include <stdio.h>
-#include "LoopLogic/Text.h"
-#include "AppLogic/Entities/TextBox.h"
-#include "AppLogic/Entities/Conversation.h"
-#include "AppLogic/Entities/User.h"
-#include "AppLogic/Entities/Message.h"
-#include "AppLogic/UI/MainPanel.h"
-#include "AppLogic/UI/ChatInputBar.h"
-#include "AppLogic/UI/CONST_UI.h"
-#include "AppLogic/Entities/TextBox.h"
+#include "Core/Text.h"
+#include "UI/TextBox.h"
+#include "Model/Conversation.h"
+#include "Model/User.h"
+#include "Model/Message.h"
+#include "UI/MainPanel.h"
+#include "UI/ChatInputBar.h"
+#include "UI/CONST_UI.h"
+#include "UI/TextBox.h"
 
 static void MessageBubble(const Message* msg, User* me, int index) {
     bool outgoing = strcmp(MessageGetAuthorID(msg), UserGetID(me)) == 0;

@@ -1,5 +1,5 @@
 
-#include "AppLogic/Healper/HStrings.h"
+#include "Helper/HStrings.h"
 #include <stdio.h>
 
 char* string_getutf8char_windows(const char* utf8_string, size_t* index, size_t utf8_stringlength) {

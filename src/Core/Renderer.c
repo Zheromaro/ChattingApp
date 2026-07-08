@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <SDL3/SDL.h>
-#include "LoopLogic/Renderer.h"
+#include "Core/Renderer.h"
 
 SDL_Renderer *renderer;
 

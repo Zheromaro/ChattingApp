@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include "LoopLogic/Json.h"
-#include "LoopLogic/LoopFunc.h"
-#include "LoopLogic/Renderer.h"
-#include "LoopLogic/Text.h"
-#include "LoopLogic/UI.h"
+#include "Core/Json.h"
+#include "Core/LoopFunc.h"
+#include "Core/Renderer.h"
+#include "Core/Text.h"
+#include "Core/UI.h"
 
 #define SDL_FLAGS SDL_INIT_VIDEO
 #define WINDOW_TITLE "Zahrawi"

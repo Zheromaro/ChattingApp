@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
-#include "AppLogic/Entities/Conversation.h"
-#include "AppLogic/Entities/Message.h"
-#include "AppLogic/Entities/User.h"
-#include "AppLogic/ID.h"
+#include "Model/Conversation.h"
+#include "Model/Message.h"
+#include "Model/User.h"
+#include "Helper/ID.h"
 
 struct Conversation {
     char* id;

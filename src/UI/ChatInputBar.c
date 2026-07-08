@@ -1,8 +1,8 @@
 #include <clay.h>
-#include "LoopLogic/Text.h"
-#include "AppLogic/Entities/TextBox.h"
-#include "AppLogic/UI/CONST_UI.h"
-#include "AppLogic/UI/ChatInputBar.h"
+#include "Core/Text.h"
+#include "UI/TextBox.h"
+#include "UI/CONST_UI.h"
+#include "UI/ChatInputBar.h"
 
 
 static void SendButton(void) {
