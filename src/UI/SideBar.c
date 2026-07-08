@@ -1,47 +1,73 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 #include <clay.h>
+
 #include "Core/Text.h"
 #include "UI/SideBar.h"
 #include "UI/CONST_UI.h"
+#include "UI/TextBox.h"
+#include "Model/Message.h"
+#include "Model/Conversation.h"
+#include "Model/User.h"
 
+/* ── Internal state ─────────────────────────────────────────────── */
 
-void HandleContactClick(Clay_ElementId elementId, Clay_PointerData pointerData, void *userData);
-void HandleSearchClick(Clay_ElementId elementId, Clay_PointerData pointerData, void *userData);
+static int  s_hovered_contact = -1;
+static int *s_active_index    = NULL;
 
-// --- State ---
-static int activeContactIndex = 0;
-static int hoveredContactIndex = -1;
+/* ── Helpers ───────────────────────────────────────────────────── */
 
-// --- Data ---
-typedef struct {
-    const char *name;
-    const char *lastMessage;
-    const char *avatarColor;
-    int unreadCount;
-} ContactData;
+static Clay_Color NameToColor(const char* name)
+{
+    if (!name || !name[0]) {
+        return (Clay_Color){ 150, 150, 150, 255 };
+    }
 
-static ContactData contacts[] = {
-    {"Alex",      "Typing dynamic layout rules...",  "FF6B6B", 0},
-    {"Sarah",     "See you tomorrow!",               "4ECDC4", 2},
-    {"Mike",      "Can you review the PR?",          "45B7D1", 0},
-    {"Emma",      "Thanks for the help!",            "96CEB4", 5},
-    {"David",     "Meeting at 3pm",                  "FFEAA7", 0},
-    {"Lisa",      "Sent the files",                  "DDA0DD", 1},
-    {"Tom",       "Sounds good to me",               "98D8C8", 0},
-    {"Jenny",     "Let me check...",                 "F7DC6F", 3},
-};
-#define CONTACT_COUNT (sizeof(contacts) / sizeof(contacts[0]))
+    unsigned hash = 5381;
+    while (*name) {
+        hash = ((hash << 5) + hash) + (unsigned char)*name++;
+    }
 
-// --- Components ---
+    static const Clay_Color palette[] = {
+        {255, 107, 107, 255}, {78,  205, 196, 255},
+        {69,  183, 209, 255}, {150, 206, 180, 255},
+        {255, 234, 167, 255}, {221, 160, 221, 255},
+        {152, 216, 200, 255}, {247, 220, 111, 255}
+    };
+    return palette[hash % 8];
+}
 
-void Avatar(int i, bool isActiveChat, bool isHovered) {
-    ContactData *c = &contacts[i];
-    Clay_Color bg = isActiveChat ? C_WHITE : HexColor(c->avatarColor);
+static const char* GetContactName(const Conversation* conv)
+{
+    if (!conv) return "Unknown";
+    const User* u = ConvGetParticipant(conv, 0);
+    return (u && UserGetName(u)) ? UserGetName(u) : "Unknown";
+}
 
-    // Scale up slightly on hover
-    float size = (isHovered && !isActiveChat) ? 48.0f : 44.0f;
+static const char* GetLastMessage(const Conversation* conv)
+{
+    if (!conv) return "No messages yet";
+    const size_t count = ConvGetMessageCount(conv);
+    if (count == 0) return "No messages yet";
+    const Message* msg = ConvGetMessage(conv, count - 1);
+    return (msg && MessageGetText(msg)) ? MessageGetText(msg) : "";
+}
+
+static int GetUnreadCount(const Conversation* conv)
+{
+    if (!conv) return 0;
+    return (int)ConvGetUnreadCount(conv);
+}
+
+/* ── Components ─────────────────────────────────────────────────── */
+
+static void Avatar(int i, const char* name, bool isActive, bool isHovered)
+{
+    const Clay_Color bg = isActive ? C_WHITE : NameToColor(name);
+    const float size    = (isHovered && !isActive) ? 48.0f : 44.0f;
+    const char initial  = (name && name[0]) ? name[0] : '?';
 
     CLAY(CLAY_IDI("Avatar", i), {
         .layout = {
@@ -49,22 +75,22 @@ void Avatar(int i, bool isActiveChat, bool isHovered) {
             .childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER }
         },
         .backgroundColor = bg,
-        .cornerRadius = CLAY_CORNER_RADIUS(size / 2)
+        .cornerRadius = CLAY_CORNER_RADIUS(size / 2.0f)
     }) {
-        // Initials as text avatar
-        char initials[3] = {c->name[0], '\0', '\0'};
-        CLAY_TEXT(CLAY_STR(initials), {
-            .fontId = FONT_ID_BODY_16,
+        const char str[2] = { initial, '\0' };
+        CLAY_TEXT(CLAY_STR(str), {
+            .fontId   = FONT_ID_BODY_16,
             .fontSize = 16,
-            .textColor = isActiveChat ? HexColor(c->avatarColor) : C_WHITE
+            .textColor = isActive ? NameToColor(name) : C_WHITE
         });
     }
 }
 
-void UnreadBadge(int count) {
+static void UnreadBadge(int count)
+{
     if (count <= 0) return;
 
-    char buf[4];
+    char buf[8];
     snprintf(buf, sizeof(buf), "%d", count > 99 ? 99 : count);
 
     CLAY(CLAY_ID_LOCAL("UnreadBadge"), {
@@ -72,37 +98,61 @@ void UnreadBadge(int count) {
             .sizing = { .width = CLAY_SIZING_FIXED(20), .height = CLAY_SIZING_FIXED(20) },
             .childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER }
         },
-        .backgroundColor = (Clay_Color){ 255, 59, 48, 255 }, // iOS red
+        .backgroundColor = (Clay_Color){ 255, 59, 48, 255 },
         .cornerRadius = CLAY_CORNER_RADIUS(10)
     }) {
         CLAY_TEXT(CLAY_STR(buf), {
-            .fontId = FONT_ID_BODY_13,
+            .fontId   = FONT_ID_BODY_13,
             .fontSize = 11,
             .textColor = C_WHITE
         });
     }
 }
 
-void Name(int i, bool isActiveChat) {
-    CLAY_TEXT(
-        CLAY_STR(contacts[i].name),
-        { .fontId = FONT_ID_BODY_16, .fontSize = 16, .textColor = isActiveChat ? C_WHITE : C_BLACK }
-    );
+static void NameText(const char* name, bool isActive)
+{
+    CLAY_TEXT(CLAY_STR(name), {
+        .fontId   = FONT_ID_BODY_16,
+        .fontSize = 16,
+        .textColor = isActive ? C_WHITE : C_BLACK
+    });
 }
 
-void LastMessage(int i, bool isActiveChat) {
-    CLAY_TEXT(
-        CLAY_STR(contacts[i].lastMessage),
-        {
-            .fontId = FONT_ID_BODY_13,
-            .fontSize = 13,
-            .textColor = isActiveChat ? (Clay_Color){215,240,255,255} : C_PLACEHOLDER
+static void LastMessageText(const char* text, bool isActive)
+{
+    CLAY_TEXT(CLAY_STR(text), {
+        .fontId   = FONT_ID_BODY_13,
+        .fontSize = 13,
+        .textColor = isActive ? (Clay_Color){215, 240, 255, 255} : C_PLACEHOLDER
+    });
+}
+
+/* ── Click handlers ─────────────────────────────────────────────── */
+
+static void HandleContactClick(Clay_ElementId elementId,
+                                Clay_PointerData pointerData,
+                                void *userData)
+{
+    (void)elementId;
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+        const int index = (int)(uintptr_t)userData;
+        if (s_active_index) {
+            *s_active_index = index;
         }
-    );
+    }
 }
 
-void Contact(int i) {
-    bool isActive = (i == activeContactIndex);
+/* ── Contact item ───────────────────────────────────────────────── */
+
+static void Contact(int i, Conversation* conv)
+{
+    if (!conv || !s_active_index) return;
+
+    const bool isActive  = (i == *s_active_index);
+    const bool isHovered = Clay_Hovered();
+    const char* name     = GetContactName(conv);
+    const char* lastMsg  = GetLastMessage(conv);
+    const int   unread   = GetUnreadCount(conv);
 
     CLAY(CLAY_IDI("Contact", i), {
         .layout = {
@@ -112,19 +162,17 @@ void Contact(int i) {
             .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
             .childAlignment = { .y = CLAY_ALIGN_Y_CENTER }
         },
-        .backgroundColor = isActive ? C_BLUE :
-                          Clay_Hovered() ? (Clay_Color){ 220, 220, 230, 255 } :
-                          (Clay_Color){ 255, 255, 255, 255 }
+        .backgroundColor = isActive  ? C_BLUE :
+                           isHovered ? (Clay_Color){ 220, 220, 230, 255 } :
+                                       C_WHITE
     }) {
-        // Register hover handler (handles both hover visual state and click detection)
         Clay_OnHover(HandleContactClick, (void *)(uintptr_t)i);
 
-        // Track hover state during layout
-        if (Clay_Hovered()) {
-            hoveredContactIndex = i;
+        if (isHovered) {
+            s_hovered_contact = i;
         }
 
-        Avatar(i, isActive, (i == hoveredContactIndex));
+        Avatar(i, name, isActive, isHovered);
 
         CLAY(CLAY_IDI("TextStack", i), {
             .layout = {
@@ -133,74 +181,104 @@ void Contact(int i) {
                 .sizing = { .width = CLAY_SIZING_GROW(0) }
             }
         }) {
-            Name(i, isActive);
-            LastMessage(i, isActive);
+            NameText(name, isActive);
+            LastMessageText(lastMsg, isActive);
         }
 
-        // Unread badge on the right
-        if (!isActive && contacts[i].unreadCount > 0) {
-            UnreadBadge(contacts[i].unreadCount);
+        if (!isActive && unread > 0) {
+            UnreadBadge(unread);
         }
     }
 }
 
-// --- Click handler ---
-void HandleContactClick(Clay_ElementId elementId, Clay_PointerData pointerData, void *userData) {
-    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
-        int index = (int)(uintptr_t)userData;
-        activeContactIndex = index;
-        // TODO: Notify your Chat system to switch conversation
-        // ChatSwitchToContact(index);
-    }
-}
-
-void ContactList(void) {
+static void ContactList(Conversation **conversations, int count,
+                        const char* filter)
+{
     CLAY(CLAY_ID("ContactList"), {
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
             .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) }
         },
-        .clip = {
-            .vertical = true,
-            .childOffset = Clay_GetScrollOffset()
-        }
+        .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() }
     }) {
-        for (int i = 0; i < CONTACT_COUNT; i++) {
-            Contact(i);
+        for (int i = 0; i < count; i++) {
+            if (!conversations[i]) continue;
+
+            if (filter && filter[0]) {
+                const char* name = GetContactName(conversations[i]);
+                if (!strstr(name, filter)) continue;
+            }
+
+            Contact(i, conversations[i]);
         }
     }
 }
 
-// --- Search with focus state ---
-static bool searchFocused = false;
-static char searchText[64] = "";
+/* ── Search bar (TextBox-powered) ─────────────────────────────── */
 
-void Search(void) {
+static void SearchBar(const TextBox* tb)
+{
+    const bool isHovered  = Clay_Hovered();
+    const bool isFocused  = tb ? true : false;
+    const char* text      = tb ? TBGetText((TextBox*)tb) : "";
+    const bool  hasText   = text && text[0];
+
     CLAY(CLAY_ID("SearchBar"), {
         .layout = {
+            .layoutDirection = CLAY_LEFT_TO_RIGHT,
             .padding = CLAY_PADDING_ALL(14),
-            .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) }
+            .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
+            .childAlignment = { .y = CLAY_ALIGN_Y_CENTER }
         },
-        .backgroundColor = searchFocused ? C_WHITE :
-                          Clay_Hovered() ? (Clay_Color){ 235, 235, 240, 255 } :
-                          C_INPUT_BG,
-        .border = searchFocused ? (Clay_BorderElementConfig){
+        .backgroundColor = isFocused ? C_WHITE :
+                           isHovered  ? (Clay_Color){ 235, 235, 240, 255 } :
+                                        C_INPUT_BG,
+        .border = isFocused ? (Clay_BorderElementConfig){
             .width = { .bottom = 2 },
             .color = C_BLUE
         } : (Clay_BorderElementConfig){0}
     }) {
-        // Register hover/click handler
-        Clay_OnHover(HandleSearchClick, NULL);
+        if (isFocused || hasText) {
+            const size_t cursor   = tb ? TBGetCursorPos((TextBox*)tb) : 0;
+            const size_t len      = text ? strlen(text) : 0;
+            const size_t cursor_b = tb ? TBGetByteOffset((TextBox*)tb, cursor) : 0;
 
-        if (searchFocused) {
-            CLAY_TEXT(CLAY_STR(searchText[0] ? searchText : "|"), {
-                .fontId = FONT_ID_BODY_15,
-                .fontSize = 15,
-                .textColor = C_BLACK
-            });
+            /* Before cursor */
+            if (cursor_b > 0) {
+                Clay_String before = { .chars = text, .length = (int32_t)cursor_b };
+                CLAY_TEXT(before, {
+                    .fontId = FONT_ID_BODY_15, .fontSize = 15, .textColor = C_BLACK
+                });
+            }
+
+            /* Cursor */
+            if (isFocused) {
+                const Clay_Color cursorColor = TBIsCursorVisible((TextBox*)tb)
+                    ? (Clay_Color){ 0, 0, 0, 255 }
+                    : (Clay_Color){ 0, 0, 0, 0 };
+
+                CLAY(CLAY_ID("SearchCursor"), {
+                    .layout = {
+                        .sizing = { .width = CLAY_SIZING_FIXED(2), .height = CLAY_SIZING_FIXED(18) },
+                        .childAlignment = { .y = CLAY_ALIGN_Y_CENTER }
+                    },
+                    .backgroundColor = cursorColor
+                }) {}
+            }
+
+            /* After cursor */
+            if (cursor_b < len) {
+                Clay_String after = {
+                    .chars = text + cursor_b,
+                    .length = (int32_t)(len - cursor_b)
+                };
+                CLAY_TEXT(after, {
+                    .fontId = FONT_ID_BODY_15, .fontSize = 15, .textColor = C_BLACK
+                });
+            }
         } else {
             CLAY_TEXT(CLAY_STRING("Search conversations..."), {
-                .fontId = FONT_ID_BODY_15,
+                .fontId   = FONT_ID_BODY_15,
                 .fontSize = 15,
                 .textColor = C_PLACEHOLDER
             });
@@ -208,45 +286,26 @@ void Search(void) {
     }
 }
 
-void HandleSearchClick(Clay_ElementId elementId, Clay_PointerData pointerData, void *userData) {
-    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
-        searchFocused = true;
-        // TODO: SDL_StartTextInput() to show keyboard on mobile
-    }
-}
+/* ── Public API ─────────────────────────────────────────────────── */
 
-// Call this from UI_Input when SDL_EVENT_TEXT_INPUT fires
-void SideBar_HandleTextInput(const char *text) {
-    if (!searchFocused) return;
-    size_t len = strlen(searchText);
-    size_t add = strlen(text);
-    if (len + add < sizeof(searchText) - 1) {
-        strcat(searchText, text);
-    }
-}
+void SideBar(Conversation **conversations, int count,
+             int *active_index, const TextBox *search_tb)
+{
+    s_active_index = active_index;
+    s_hovered_contact = -1;
 
-void SideBar_HandleBackspace(void) {
-    if (!searchFocused) return;
-    size_t len = strlen(searchText);
-    if (len > 0) searchText[len - 1] = '\0';
-}
-
-void SideBar_BlurSearch(void) {
-    searchFocused = false;
-}
-
-void SideBar(void) {
-    // Reset hover tracking each frame
-    hoveredContactIndex = -1;
+    const char* filter = search_tb ? TBGetText((TextBox*)search_tb) : "";
 
     CLAY(CLAY_ID("SideBar"), {
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
             .sizing = { .width = CLAY_SIZING_FIXED(320), .height = CLAY_SIZING_GROW(0) }
         },
-        .backgroundColor = { 255, 255, 255, 255 }
+        .backgroundColor = C_WHITE
     }) {
-        Search();
-        ContactList();
+        SearchBar(search_tb);
+        if (conversations && count > 0) {
+            ContactList(conversations, count, filter);
+        }
     }
 }

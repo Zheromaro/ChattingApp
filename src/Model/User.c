@@ -3,10 +3,10 @@
 #include "Model/User.h"
 #include "Helper/ID.h"
 
-
 typedef struct User {
     char* id;
     char* display_name;
+    char* avatarColor;
 } User;
 
 static char* str_dup(const char* s) {

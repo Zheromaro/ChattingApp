@@ -1,5 +1,5 @@
 #include <clay.h>
-#include <stdio.h>
+#include <string.h>
 #include "Core/Text.h"
 #include "UI/TextBox.h"
 #include "Model/Conversation.h"

@@ -1,4 +1,5 @@
 #include <clay.h>
+#include <string.h>
 #include "Core/Text.h"
 #include "UI/TextBox.h"
 #include "UI/CONST_UI.h"

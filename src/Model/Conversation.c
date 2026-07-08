@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include "Model/Conversation.h"
@@ -13,6 +14,7 @@ struct Conversation {
     Message** messages;
     size_t message_count;
     size_t message_capacity;
+    size_t unread_count;
 };
 
 static bool grow_array(void** arr, size_t* capacity, size_t count, size_t item_size) {
@@ -86,4 +88,25 @@ size_t ConvGetMessageCount(const Conversation* conv) {
 const Message* ConvGetMessage(const Conversation* conv, size_t index) {
     if (!conv || index >= conv->message_count) return NULL;
     return conv->messages[index];
+}
+
+size_t ConvGetParticipantCount(const Conversation* conv) {
+    return conv ? conv->participant_count : 0;
+}
+
+const User* ConvGetParticipant(const Conversation* conv, size_t index) {
+    if (!conv || index >= conv->participant_count) return NULL;
+    return conv->participants[index];
+}
+
+size_t ConvGetUnreadCount(const Conversation* conv) {
+    return conv ? conv->unread_count : 0;
+}
+
+void ConvSetUnreadCount(Conversation* conv, size_t count) {
+    if (conv) conv->unread_count = count;
+}
+
+void ConvIncrementUnreadCount(Conversation* conv) {
+    if (conv) conv->unread_count++;
 }
