@@ -7,23 +7,21 @@
 #include "Controller/Chat.h"
 #include "UI/SideBar.h"
 #include "UI/MainPanel.h"
-#include "UI/TextBox.h"
-#include "UI/CONST_UI.h"
+#include "UI/Logic/TextBox.h"
+#include "UI/Widgets/TextBox.h"
+#include "UI/UI_Theme.h"
 #include "Model/Message.h"
 #include "Model/User.h"
 #include "Model/Conversation.h"
-
-/* ── State ──────────────────────────────────────────────────────── */
+#include "Model/ContactList.h"
 
 static TextBox* s_chat_tb = NULL;
 static TextBox* s_search_tb = NULL;
-static User*    s_me = NULL;
-
-static Conversation** s_conversations = NULL;
-static int            s_conv_count    = 0;
-static int            s_active_conv   = 0;
-
-/* ── Demo data ──────────────────────────────────────────────────── */
+static User* s_me = NULL;
+static ContactList* s_contact_list = NULL;
+bool chatTextbox = true;
+int previous_active_idx = 0;
+int current_active_idx = 0;
 
 static void CreateDemoConversations(void) {
     static const char* names[] = {
@@ -42,38 +40,34 @@ static void CreateDemoConversations(void) {
     };
     static const int unread[] = { 0, 2, 0, 5, 0, 1, 0, 3 };
 
-    s_conv_count = 8;
-    s_conversations = calloc((size_t)s_conv_count, sizeof(Conversation*));
-
-    for (int i = 0; i < s_conv_count; i++) {
-        s_conversations[i] = ConvCreate();
-        if (!s_conversations[i]) continue;
+    for (int i = 0; i < 8; i++) {
+        Conversation* conv = ConvCreate();
+        if (!conv) continue;
 
         User* contact = UserCreate(names[i]);
         if (contact) {
-            ConvAddParticipant(s_conversations[i], contact);
+            ConvAddParticipant(conv, contact);
         }
 
-        Message* msg = MessageCreate(
-            UserGetID(contact),
-            ConvGetID(s_conversations[i]),
-            lastMessages[i]
-        );
+        Message* msg = MessageCreate(UserGetID(contact), ConvGetID(conv), lastMessages[i]);
         if (msg) {
-            ConvAddMessage(s_conversations[i], msg);
+            ConvAddMessage(conv, msg);
         }
 
-        ConvSetUnreadCount(s_conversations[i], (size_t)unread[i]);
+        ConvSetUnreadCount(conv, (size_t)unread[i]);
+
+        // Add to our contact list model
+        CLAddConversation(s_contact_list, conv);
     }
 }
-
-/* ── Lifecycle ──────────────────────────────────────────────────── */
 
 void ChatEnter(void)
 {
     s_chat_tb = TBCreate();
     s_search_tb = TBCreate();
     s_me = UserCreate("zahrawi");
+    s_contact_list = CLCreate();
+
     CreateDemoConversations();
 }
 
@@ -87,27 +81,18 @@ void ChatExit(void)
     UserDestroy(s_me);
     s_me = NULL;
 
-    for (int i = 0; i < s_conv_count; i++) {
-        if (s_conversations[i]) {
-            ConvDestroy(s_conversations[i]);
-        }
-    }
-    free(s_conversations);
-    s_conversations = NULL;
-    s_conv_count = 0;
+    CLDestroy(s_contact_list); // Free ContactList and its contents
+    s_contact_list = NULL;
 }
-
-/* ── Input handling ───────────────────────────────────────────────── */
 
 void ChatInput(SDL_Event* event)
 {
     if (!event) return;
-    bool yes = true;
 
-    if (yes) {
-        TBHandleEvent(s_search_tb, event);
-    } else if (yes) {
+    if (chatTextbox) {
         TBHandleEvent(s_chat_tb, event);
+    } else {
+        TBHandleEvent(s_search_tb, event);
     }
 
     /* Global shortcuts */
@@ -117,24 +102,20 @@ void ChatInput(SDL_Event* event)
             case SDLK_KP_ENTER: {
                 const char* text = TBTakeText(s_chat_tb);
                 if (!text || text[0] == '\0') break;
-                if (s_active_conv < 0 || s_active_conv >= s_conv_count) break;
-                if (!s_conversations[s_active_conv]) break;
 
-                Message* msg = MessageCreate(
-                    UserGetID(s_me),
-                    ConvGetID(s_conversations[s_active_conv]),
-                    text
-                );
+                // Safely grab the active conversation
+                Conversation* active_conv = CLGetActiveConversation(s_contact_list);
+                if (!active_conv) break;
+
+                Message* msg = MessageCreate(UserGetID(s_me), ConvGetID(active_conv), text);
                 if (msg) {
-                    ConvAddMessage(s_conversations[s_active_conv], msg);
+                    ConvAddMessage(active_conv, msg);
                 }
                 break;
             }
         }
     }
 }
-
-/* ── Update / Render ──────────────────────────────────────────────── */
 
 void ChatUpdate(float delta_time)
 {
@@ -150,29 +131,29 @@ void ChatUpdate(float delta_time)
         },
         .backgroundColor = C_BG_GREY
     }) {
-        const int prev_active = s_active_conv;
+        // Bridge state for the SideBar to manipulate
+        previous_active_idx = current_active_idx;
+        current_active_idx = CLGetActiveIndex(s_contact_list);
 
-        SideBar(s_conversations, s_conv_count, &s_active_conv, s_search_tb);
+        SideBar(s_contact_list, s_search_tb);
 
-        /* Clear unread when switching conversations */
-        if (s_active_conv != prev_active &&
-            s_active_conv >= 0 && s_active_conv < s_conv_count &&
-            s_conversations[s_active_conv]) {
-            ConvSetUnreadCount(s_conversations[s_active_conv], 0);
+        /* Handle conversation switching and clear unread counts */
+        if (current_active_idx != previous_active_idx) {
+            CLSetActiveIndex(s_contact_list, current_active_idx);
+
+            Conversation* new_active_conv = CLGetActiveConversation(s_contact_list);
+            if (new_active_conv) {
+                ConvSetUnreadCount(new_active_conv, 0);
+            }
         }
 
         /* Render active conversation */
-        if (s_active_conv >= 0 && s_active_conv < s_conv_count) {
-            MainPanel(s_chat_tb, s_conversations[s_active_conv], s_me);
+        Conversation* active_conv = CLGetActiveConversation(s_contact_list);
+        if (active_conv) {
+            MainPanel(s_chat_tb, active_conv, s_me);
         }
     }
 
     const Clay_RenderCommandArray renderCommands = Clay_EndLayout(delta_time);
     UI_Layout(renderCommands);
-}
-
-void ChatRender(SDL_Renderer *renderer)
-{
-    (void)renderer;
-    /* Rendering is handled by UI_Layout in ChatUpdate */
 }

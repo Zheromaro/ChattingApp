@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <SDL3/SDL.h>
-#include "UI/TextBox.h"
+#include "UI/Logic/TextBox.h"
 #include "Helper/HStrings.h"
 
 typedef struct {

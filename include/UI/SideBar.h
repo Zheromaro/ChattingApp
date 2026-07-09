@@ -1,9 +1,9 @@
 #ifndef UI_SIDEBAR_H
 #define UI_SIDEBAR_H
 
-typedef struct Conversation Conversation;
+typedef struct ContactList ContactList;
 typedef struct TextBox TextBox;
 
-void SideBar(Conversation **conversations, int count, int *active_index, const TextBox *search_tb);
+void SideBar(ContactList *cl, const TextBox *search_tb);
 
 #endif

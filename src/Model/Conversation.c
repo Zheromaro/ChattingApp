@@ -40,7 +40,6 @@ Conversation* ConvCreate(void) {
 
 void ConvDestroy(Conversation* conv) {
     if (!conv) return;
-    for (size_t i = 0; i < conv->participant_count; i++) UserDestroy(conv->participants[i]);
     free(conv->participants);
     for (size_t i = 0; i < conv->message_count; i++) MessageDestroy(conv->messages[i]);
     free(conv->messages);

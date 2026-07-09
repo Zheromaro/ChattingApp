@@ -60,11 +60,11 @@ char* string_getutf8char(const char* utf8_string, size_t* index, size_t utf8_str
 }
 
 char* string_dup(const char* string) {
-    if (string == NULL) return NULL;
-    size_t len = strlen(string) + 1;
-    char* dubstr = malloc(len);
-    if (dubstr) memcpy(dubstr, string, len);
-    return dubstr;
+        if (!string) return NULL;
+        size_t len = strlen(string) + 1;
+        char* newString = malloc(len);
+        if (newString) memcpy(newString, string, len);
+        return newString;
 }
 
 bool string_concatstr(char** dest_string, const char* src_string) {

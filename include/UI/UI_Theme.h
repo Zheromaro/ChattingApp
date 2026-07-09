@@ -3,7 +3,9 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <clay.h>
+#include "Core/Text.h"
 
 /* ── Colors ─────────────────────────────────────────────────────── */
 static const Clay_Color C_WHITE       = {255, 255, 255, 255};
@@ -12,11 +14,29 @@ static const Clay_Color C_BLUE        = {44,  147, 227, 255};
 static const Clay_Color C_BG_GREY     = {231, 235, 240, 255};
 static const Clay_Color C_INPUT_BG    = {244, 244, 245, 255};
 static const Clay_Color C_PLACEHOLDER = {142, 142, 147, 255};
+// Random Color
+static inline uint32_t hash_u32(uint32_t x) {
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = (x >> 16) ^ x;
+    return x;
+}
+
+#define CLAY_HASH_COLOR(id) (Clay_Color){ \
+    (float)(hash_u32(id) % 256), \
+    (float)(hash_u32(id + 1) % 256), \
+    (float)(hash_u32(id + 2) % 256), \
+    255 \
+}
 
 /* ── Radii ──────────────────────────────────────────────────────── */
 static const Clay_CornerRadius RADIUS_INCOMING = {12, 12, 4,  12};
 static const Clay_CornerRadius RADIUS_OUTGOING = {12, 12, 12, 4};
 static const Clay_CornerRadius RADIUS_PILL      = {18, 18, 18, 18};
+
+/* ── Effects ────────────────────────────────────────────────────── */
+#define AVATAR_SIZE_HOVERED 48.0f
+#define AVATAR_SIZE_DEFAULT 44.0f
 
 /* ── Helpers ────────────────────────────────────────────────────── */
 

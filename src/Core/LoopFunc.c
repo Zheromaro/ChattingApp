@@ -53,6 +53,5 @@ void Render(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
     SDL_RenderClear(renderer);
     UI_Render();
-    ChatRender(renderer);
     SDL_RenderPresent(renderer);
 }
