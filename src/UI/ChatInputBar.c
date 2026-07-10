@@ -1,10 +1,13 @@
 #include <clay.h>
-#include "Core/Text.h"
+#include "Core/UI.h"
+#include "UI/Logic/TextBox.h"
+#include "UI/UI_Event.h"
+#include "UI/SideBar.h"
 #include "UI/Widgets/TextBox.h"
 #include "UI/ChatInputBar.h"
 #include "UI/UI_Theme.h"
 
-static void SendButton(void)
+static void SendButton(TextBox* tb, UI_Event* event)
 {
     CLAY(CLAY_ID("SendButton"), {
         .layout = {
@@ -15,6 +18,8 @@ static void SendButton(void)
         .backgroundColor = C_BLUE,
         .cornerRadius = RADIUS_PILL
     }) {
+        const bool isHovered = Clay_Hovered();
+        if (isHovered && UI_GetMouseDown()) event->send(TBTakeText(tb));
         CLAY_TEXT(CLAY_STRING("Send"), {
             .fontId = FONT_ID_BODY_15,
             .fontSize = 15,
@@ -23,7 +28,7 @@ static void SendButton(void)
     }
 }
 
-static void TextField(TextBox* tb)
+static void TextField(TextBox* tb, UI_Event* event)
 {
     CLAY(CLAY_ID("ChatInput"), {
         .layout = {
@@ -35,11 +40,13 @@ static void TextField(TextBox* tb)
         .backgroundColor = C_INPUT_BG,
         .cornerRadius = RADIUS_PILL
     }) {
+        const bool isHovered = Clay_Hovered();
+        if (isHovered && UI_GetMouseDown()) event->chatBox();
         TextInputContent(tb, "Type a message...", 15, C_BLACK, C_PLACEHOLDER, FONT_ID_BODY_15);
     }
 }
 
-void ChatInputBar(TextBox* tb)
+void ChatInputBar(TextBox* tb, UI_Event* event)
 {
     CLAY(CLAY_ID("BottomInputBar"), {
         .layout = {
@@ -51,7 +58,7 @@ void ChatInputBar(TextBox* tb)
         },
         .backgroundColor = C_WHITE
     }) {
-        TextField(tb);
-        SendButton();
+        TextField(tb, event);
+        SendButton(tb, event);
     }
 }

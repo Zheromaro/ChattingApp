@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <clay.h>
 
-#include "Core/Text.h"
+#include "Core/UI.h"
+#include "UI/UI_Event.h"
 #include "UI/SideBar.h"
 #include "UI/Widgets/Avatar.h"
 #include "UI/Widgets/Badge.h"
@@ -150,9 +151,8 @@ static void ContactListView(Conversation **conversations, int count,
 
 /* ── Search bar ───────────────────────────────────────────────── */
 
-static void SearchBar(const TextBox* tb)
+static void SearchBar(const TextBox* tb, UI_Event* event)
 {
-    const bool isHovered = Clay_Hovered();
     const bool isFocused = tb ? true : false;  /* TODO: wire to real focus state */
 
     CLAY(CLAY_ID("SearchBar"), {
@@ -163,13 +163,16 @@ static void SearchBar(const TextBox* tb)
             .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}
         },
         .backgroundColor = isFocused ? C_WHITE :
-                          isHovered  ? (Clay_Color){235, 235, 240, 255} :
+                          Clay_Hovered() ? (Clay_Color){235, 235, 240, 255} :
                           C_INPUT_BG,
         .border = isFocused ? (Clay_BorderElementConfig){
             .width = {.bottom = 2},
             .color = C_BLUE
         } : (Clay_BorderElementConfig){0}
     }) {
+        const bool isHovered = Clay_Hovered();
+        if (isHovered && UI_GetMouseDown()) event->searchBox();
+
         if (tb) {
             TextInputContent((TextBox*)tb, "Search conversations...",
                              15, C_BLACK, C_PLACEHOLDER, FONT_ID_BODY_15);
@@ -183,7 +186,7 @@ static void SearchBar(const TextBox* tb)
     }
 }
 
-void SideBar(ContactList *cl, const TextBox *search_tb)
+void SideBar(ContactList *cl, const TextBox *search_tb, UI_Event* event)
 {
     s_contact_list    = cl;
     s_hovered_contact = -1;
@@ -200,7 +203,7 @@ void SideBar(ContactList *cl, const TextBox *search_tb)
         },
         .backgroundColor = C_WHITE
     }) {
-        SearchBar(search_tb);
+        SearchBar(search_tb, event);
         if (conversations && count > 0) {
             ContactListView(conversations, count, filter);
         }

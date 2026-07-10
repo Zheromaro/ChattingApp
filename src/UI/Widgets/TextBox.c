@@ -43,7 +43,7 @@ void TextInputContent(TextBox* tb, const char* placeholder,
                 .chars  = full + sel_start_b,
                 .length = (int32_t)(sel_end_b - sel_start_b)
             };
-            CLAY(CLAY_ID("SelBg"), {
+            CLAY_AUTO_ID({
                 .layout = {
                     .sizing = {.width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_GROW(0)},
                     .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}
@@ -73,7 +73,7 @@ void TextInputContent(TextBox* tb, const char* placeholder,
         }
 
         Clay_Color cursorColor = TBIsCursorVisible(tb) ? textColor : (Clay_Color){0,0,0,0};
-        CLAY(CLAY_ID("Cursor"), {
+        CLAY_AUTO_ID({
             .layout = {
                 .sizing = {.width = CLAY_SIZING_FIXED(2), .height = CLAY_SIZING_FIXED(18)},
                 .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}

@@ -3,7 +3,8 @@
 
 typedef struct ContactList ContactList;
 typedef struct TextBox TextBox;
+typedef struct UI_Event UI_Event;
 
-void SideBar(ContactList *cl, const TextBox *search_tb);
+void SideBar(ContactList *cl, const TextBox *search_tb, UI_Event* event);
 
 #endif

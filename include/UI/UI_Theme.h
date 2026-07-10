@@ -1,5 +1,5 @@
-#ifndef CONST_UI_H
-#define CONST_UI_H
+#ifndef UI_THEME_H
+#define UI_THEME_H
 
 #include <stdio.h>
 #include <stdint.h>

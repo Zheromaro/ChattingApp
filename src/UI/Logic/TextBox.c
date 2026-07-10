@@ -23,6 +23,9 @@ struct TextBox {
     float cursor_blink_timer;
     float cursor_blink_interval;
     bool cursor_visible;
+
+    char *cache;
+    bool cache_dirty;
 };
 
 static void TBResetBlink(TextBox* tb) {
@@ -65,6 +68,7 @@ static void TBDeleteSelection(TextBox* tb) {
     /* 3. Update metadata */
     tb->char_count = new_count;
     tb->cursor_pos = tb->sel_start;
+    tb->cache_dirty = true;
     TBClearSelection(tb);
 
     /* 4. Shrink or free the array */
@@ -85,6 +89,7 @@ static void TBBackspace(TextBox* tb) {
         tb->chars[i] = tb->chars[i + 1];
     tb->char_count--;
     tb->cursor_pos--;
+    tb->cache_dirty = true;
     if (!tb->char_count) {
         free(tb->chars);
         tb->chars = NULL;
@@ -100,6 +105,7 @@ static void TBDeleteAt(TextBox* tb, size_t pos) {
     for (size_t i = pos; i + 1 < tb->char_count; i++)
         tb->chars[i] = tb->chars[i + 1];
     tb->char_count--;
+    tb->cache_dirty = true;
     if (!tb->char_count) {
         free(tb->chars);
         tb->chars = NULL;
@@ -120,6 +126,7 @@ static void TBInsertChar(TextBox* tb, char* ch) {
     tb->chars[tb->cursor_pos].utf8_len = strlen(ch);
     tb->cursor_pos++;
     tb->char_count = new_count;
+    tb->cache_dirty = true;
 }
 
 static void TBAddSelectionLeft(TextBox* tb) {
@@ -192,7 +199,6 @@ bool TBHandleEvent(TextBox* tb, const SDL_Event* ev) {
         while (idx < len) {
             char* ch = string_getutf8char(ev->text.text, &idx, len);
             if (ch) TBInsertChar(tb, ch);
-            idx++;
         }
         TBResetBlink(tb);
         return true;
@@ -280,15 +286,11 @@ bool TBHandleEvent(TextBox* tb, const SDL_Event* ev) {
     return false;
 }
 
-const char* TBTakeText(TextBox* tb) {
-    if (!tb || !tb->char_count) return "";
-    static char* cache = NULL;
-    free(cache);
-    cache = NULL;
-    for (size_t i = 0; i < tb->char_count; i++)
-        string_concatstr(&cache, tb->chars[i].utf8_char);
+char* TBTakeText(TextBox* tb) {
+    const char *text = TBGetText(tb);
+    char *result = strdup(text);   // caller owns this copy
     TBClear(tb);
-    return cache ? cache : "";
+    return result;
 }
 
 void TBClear(TextBox* tb) {
@@ -298,18 +300,24 @@ void TBClear(TextBox* tb) {
     tb->chars = NULL;
     tb->char_count = 0;
     tb->cursor_pos = 0;
+    tb->cache_dirty = true;
     TBClearSelection(tb);
     TBResetBlink(tb);
 }
 
-char* TBGetText(TextBox* tb) {
-    if (!tb || !tb->char_count) return "";
-    static char* cache = NULL;
-    free(cache);
-    cache = NULL;
+const char *TBGetText(TextBox *tb)
+{
+    if (!tb) return "";
+    if (!tb->cache_dirty) return tb->cache ? tb->cache : "";
+
+    free(tb->cache);
+    tb->cache = NULL;
+
     for (size_t i = 0; i < tb->char_count; i++)
-        string_concatstr(&cache, tb->chars[i].utf8_char);
-    return cache ? cache : "";
+        string_concatstr(&tb->cache, tb->chars[i].utf8_char);
+
+    tb->cache_dirty = false;
+    return tb->cache ? tb->cache : "";
 }
 
 size_t TBGetByteOffset(const TextBox* tb, size_t char_index) {

@@ -10,7 +10,7 @@
 #include "Core/UI.h"
 
 #define SDL_FLAGS SDL_INIT_VIDEO
-#define WINDOW_TITLE "Zahrawi"
+#define WINDOW_TITLE "Zahrawi Chat"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 

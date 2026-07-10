@@ -12,9 +12,9 @@ void TBDestroy(TextBox* tb);
 void TBUpdate(TextBox* tb, float delta_time);
 bool TBHandleEvent(TextBox* tb, const SDL_Event* event);
 
-const char* TBTakeText(TextBox* tb);
+char* TBTakeText(TextBox* tb);
 void TBClear(TextBox* tb);
-char* TBGetText(TextBox* tb);
+const char* TBGetText(TextBox* tb);
 size_t TBGetByteOffset(const TextBox* tb, size_t char_index);
 size_t TBGetCursorPos(const TextBox* tb);
 bool TBHasSelection(const TextBox* tb);

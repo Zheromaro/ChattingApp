@@ -31,7 +31,7 @@ static void MessageStream(const Conversation* conv, const User* me)
     }
 }
 
-void MainPanel(TextBox* tb, Conversation* conv, User* me)
+void MainPanel(TextBox* tb, Conversation* conv, User* me, UI_Event* event)
 {
     CLAY(CLAY_ID("ChatWindow"), {
         .layout = {
@@ -41,6 +41,6 @@ void MainPanel(TextBox* tb, Conversation* conv, User* me)
     }) {
         ChatHeader(GetConversationTitle(conv));
         MessageStream(conv, me);
-        ChatInputBar(tb);
+        ChatInputBar(tb, event);
     }
 }
