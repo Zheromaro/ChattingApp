@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL.h>
 
+void ChatSetConfig(const char* username, int preferred_port);
 void ChatEnter(void);
 void ChatExit(void);
 void ChatInput(SDL_Event* event);

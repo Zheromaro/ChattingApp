@@ -192,13 +192,13 @@ test_dir: ## Configure, rebuild, and run one GTest executable (use DIR=dir/name 
 # ==========================================================
 # 🚀 Run the project
 # ==========================================================
-run: ## Run the executable
+run:
 	@printf "$(COLOR_YELLOW)▶️  Starting $(PROJECT_NAME)...$(COLOR_RESET)\n"
 	@if [ -x ./build/bin/Release/$(PROJECT_NAME) ]; then \
-		./build/bin/Release/$(PROJECT_NAME); \
+		./build/bin/Release/$(PROJECT_NAME) $(ARGS); \
 		EXIT_CODE=$$?; \
 	elif [ -x ./build/bin/Debug/$(PROJECT_NAME) ]; then \
-		./build/bin/Debug/$(PROJECT_NAME); \
+		./build/bin/Debug/$(PROJECT_NAME) $(ARGS); \
 		EXIT_CODE=$$?; \
 	else \
 		printf "$(COLOR_RED)❌ No executable found in build/bin/Release or build/bin/Debug$(COLOR_RESET)\n"; \

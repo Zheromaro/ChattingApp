@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include "Controller/Chat.h"
 #include "Core/Json.h"
 #include "Core/LoopFunc.h"
 #include "Core/Renderer.h"
@@ -78,8 +79,11 @@ void loop(App *a) {
 
 
 int main(int argc, char *argv[]) {
-    (void)argc;
-    (void)argv;
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <user_name> <port>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+    ChatSetConfig((const char*)argv[1], atoi(argv[2]));
 
     App game = {0};
 
