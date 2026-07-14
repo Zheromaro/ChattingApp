@@ -116,8 +116,10 @@ int chatsock_recvall(chatsock_t s, void* buff, size_t sz) {
 void chatsock_close(chatsock_t* s) {
     if (!chatsock_valid(*s)) return;
 #ifdef _WIN32
+    shutdown(s->fd, SD_BOTH);
     closesocket(s->fd);
 #else
+    shutdown(s->fd, SHUT_RDWR);
     close(s->fd);
 #endif
     s->fd = CHATSOCK_INVALID_FD;

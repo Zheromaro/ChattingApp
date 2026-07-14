@@ -147,7 +147,7 @@ static void* accept_thread(void* arg) {
     ChatP2P* p2p = arg;
     while (p2p->running) {
         chatsock_t c = chatsock_accept(&p2p->listener);
-        if (c.fd == 0) break;
+        if (!chatsock_valid(c)) break;
 
         char id[64];
         struct sockaddr_in* peer_addr = (struct sockaddr_in*)&c.addr;
@@ -206,18 +206,27 @@ void P2P_Destroy(ChatP2P* p2p) {
     if (!p2p) return;
     p2p->running = false;
 
+    /* Unblock accept_thread */
     chatsock_close(&p2p->listener);
     pthread_join(p2p->accept_thread, NULL);
 
+    /* Steal list under lock, then destroy outside the lock */
     pthread_mutex_lock(&p2p->peers_mutex);
-    Peer* p = p2p->peers;
-    while (p) { peer_destroy(p); p = p->next; }
+    Peer* to_kill = p2p->peers;
+    p2p->peers = NULL;
     pthread_mutex_unlock(&p2p->peers_mutex);
 
+    while (to_kill) {
+        Peer* next = to_kill->next;   // save next BEFORE free
+        peer_destroy(to_kill);
+        to_kill = next;
+    }
+
+    /* Free events */
     P2PEvent* e = p2p->event_head;
     while (e) {
         P2PEvent* n = e->next;
-        free(e->peer_id); free(e->peer_name); free(e->text); free(e);
+        P2P_FreeEvent(e);
         e = n;
     }
 
