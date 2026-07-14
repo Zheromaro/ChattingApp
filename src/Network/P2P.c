@@ -118,8 +118,10 @@ static void* peer_recv_thread(void* arg) {
             case PKT_FRIEND_ACC: {
                 free(peer->display_name);
                 peer->display_name = pkt->sender_id ? strdup(pkt->sender_id) : strdup("Unknown");
+                pthread_mutex_lock(&p2p->peers_mutex);
                 peer->they_accepted = true;
-                if (peer->we_accepted) peer->accepted = true;
+                peer->accepted = true;
+                pthread_mutex_unlock(&p2p->peers_mutex);
                 push_event(p2p, P2P_EVT_FRIEND_ACCEPT, peer->id, peer->display_name, NULL);
                 break;
             }
@@ -259,7 +261,7 @@ bool P2P_AcceptFriend(ChatP2P* p2p, const char* peer_id) {
     if (!peer) { pthread_mutex_unlock(&p2p->peers_mutex); return false; }
 
     peer->we_accepted = true;
-    if (peer->they_accepted) peer->accepted = true;
+    peer->accepted = true;
 
     /* === USE ChatProtocol === */
     char* payload = ChatProtocol_SerializeFriendAcc(p2p->my_name);
